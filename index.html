@@ -244,6 +244,7 @@ tailwind.config = {
       <div class="ml-auto flex gap-2 items-center flex-wrap">
         <span id="admDirty" class="text-[11.5px] text-red-200 font-bold" hidden>● 未保存の変更あり</span>
         <button id="admSave" class="rounded-full bg-white text-navy text-[12.5px] font-bold px-5 py-2">保存する</button>
+        <button id="admExport" class="rounded-full border border-white/40 text-[12.5px] font-bold px-4 py-2">JSON書き出し</button>
         <button id="admReload" class="rounded-full border border-white/40 text-[12.5px] font-bold px-4 py-2">再読み込み</button>
         <button id="admClose" class="rounded-full border border-white/40 text-[12.5px] font-bold px-4 py-2">閉じる</button>
       </div>
@@ -1350,6 +1351,21 @@ function closeAdmin(){
 }
 $('#admClose').addEventListener('click', closeAdmin);
 $('#admSave').addEventListener('click', saveAll);
+
+/* いまのデータをJSONで書き出す。
+   バックアップのほか、index.html の DEFAULT_DATA を作り直すときにも使います */
+$('#admExport').addEventListener('click', () => {
+  const out = {
+    tournaments: DATA.tournaments, players: DATA.players,
+    results: DATA.results, news: DATA.news, content: DATA.content
+  };
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([JSON.stringify(out)], { type:'application/json;charset=utf-8' }));
+  a.download = 'btp-data.json';
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+  toast('btp-data.json を書き出しました。');
+});
 $('#admReload').addEventListener('click', async () => {
   if (ADM_DIRTY && !confirm('保存していない変更は消えます。読み込み直しますか？')) return;
   const d = await loadData(); applyData(d);

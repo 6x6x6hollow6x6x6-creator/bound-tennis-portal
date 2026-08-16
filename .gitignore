@@ -1,8 +1,11 @@
 node_modules/
-tools/
+package-lock.json
+package.json
 *.png
-*.mjs
 .test-tw.css
 tw.config.js
 tw.css
-package*.json
+t.mjs
+t2.mjs
+t3.mjs
+CLAUDE.local.md
