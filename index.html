@@ -1,0 +1,1872 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>大会情報ポータル・日本ランキング｜日本バウンドテニス協会</title>
+
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = {
+  theme: { extend: {
+    colors: {
+      navy:  { DEFAULT:'#001F33', 700:'#123f5e', 600:'#1d5177' },
+      brand: { red:'#B50000', redDark:'#8f0000' },
+      paper: '#F1F1F1',
+      rule:  '#E2E2E2',
+      ink:   { DEFAULT:'#222222', soft:'#555555', mute:'#8a8a8a' },
+      /* グレード表示用の同一色相ランプ（濃いほど格上） */
+      g1:'#001f33', g2:'#103f5f', g3:'#23628b', g4:'#4a86ae', g5:'#7ba7c6'
+    },
+    fontFamily: { sans:['"Helvetica Neue"','"Segoe UI"','"Hiragino Kaku Gothic ProN"','"Hiragino Sans"','Meiryo','sans-serif'] }
+  }}
+};
+</script>
+<style>
+  html{scroll-behavior:smooth}
+  body{font-family:"Helvetica Neue","Segoe UI","Hiragino Kaku Gothic ProN","Hiragino Sans",Meiryo,sans-serif;line-height:1.85}
+  /* 協会サイトと同じ、背景に薄く走る4分割の縦グリッド線 */
+  #gridlines{position:fixed;inset:0;z-index:0;pointer-events:none;
+    background:repeating-linear-gradient(to right,transparent,transparent calc(25% - 1px),#E2E2E2 calc(25% - 1px),#E2E2E2 25%)}
+  @media (max-width:780px){#gridlines{background:repeating-linear-gradient(to right,transparent,transparent calc(50% - 1px),#E2E2E2 calc(50% - 1px),#E2E2E2 50%)}}
+  .tnum{font-variant-numeric:tabular-nums}
+  .sec-en{font-weight:300;letter-spacing:.01em;line-height:1.1}
+  .hero-out{color:transparent;-webkit-text-stroke:1px rgba(255,255,255,.16)}
+  .stack>span{display:block;height:100%;min-width:3px}
+  [hidden]{display:none !important}
+  .adm-tab[aria-current="true"]{background:#001F33;color:#fff}
+  .nav-a[aria-current="page"]{color:#001F33}
+  .nav-a[aria-current="page"]::after{content:"";position:absolute;left:12px;right:12px;bottom:2px;height:2px;background:#B50000}
+  input:focus,select:focus,textarea:focus{outline:2px solid #001F33;outline-offset:-1px}
+  .fade-in{animation:fi .25s ease-out}
+  @keyframes fi{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+  @media print{header,footer,#adminOverlay,.no-print{display:none!important}}
+</style>
+</head>
+
+<body class="bg-paper text-ink">
+<div id="gridlines"></div>
+
+<!-- ===== 注意バー ===== -->
+<div id="noticeBar" class="relative z-10 bg-navy text-white text-[11.5px] tracking-wide text-center py-1.5 px-4"></div>
+
+<!-- ===== ヘッダー ===== -->
+<header class="sticky top-0 z-30 bg-white border-b border-rule">
+  <div class="max-w-[1180px] mx-auto px-6 py-3 flex items-center gap-5">
+    <a href="#" data-nav="home" class="flex items-center gap-3 shrink-0">
+      <svg viewBox="0 0 40 40" class="w-9 h-9" aria-hidden="true">
+        <path d="M30 4C16 6 7 15 7 25c0 6 4 11 11 11 2 0 4-.4 5-1-6-1-9-5-9-10 0-8 7-15 18-19z" fill="#B50000"/>
+        <path d="M33 9c-9 3-15 9-15 16 0 4 2 7 6 8-2-2-3-4-3-7 0-6 5-13 14-17z" fill="#B50000" opacity=".65"/>
+      </svg>
+      <span class="leading-tight">
+        <span id="hdOrg" class="block text-[10.5px] text-ink-soft tracking-wide"></span>
+        <span id="hdSite" class="block text-[16px] font-bold tracking-wide"></span>
+        <span id="hdTag" class="block text-[11px] font-bold text-brand-red tracking-widest"></span>
+      </span>
+    </a>
+    <nav id="mainNav" class="ml-auto hidden md:flex gap-0.5"></nav>
+    <button id="menuBtn" class="md:hidden ml-auto w-10 h-10 rounded-full bg-navy text-white text-base" aria-label="メニュー">•••</button>
+  </div>
+  <nav id="drawer" class="md:hidden bg-white border-t border-rule" hidden></nav>
+</header>
+
+<main class="relative z-10 max-w-[1180px] mx-auto px-6 pb-20">
+
+  <!-- ========== トップ ========== -->
+  <section data-view="home" class="view">
+    <div class="relative overflow-hidden bg-navy text-white px-6 sm:px-12 pt-12 pb-11 mt-6">
+      <div class="hero-out absolute -left-2 -bottom-4 text-[clamp(52px,11vw,132px)] font-bold whitespace-nowrap leading-none select-none">NATIONAL RANKING</div>
+      <div class="relative max-w-[700px]">
+        <div class="text-[12px] font-bold tracking-[.22em] opacity-70">BOUND TENNIS TOURNAMENT PORTAL</div>
+        <h1 id="heroTitle" class="text-[clamp(23px,3.3vw,34px)] leading-[1.55] font-bold mt-3.5 tracking-wide"></h1>
+        <p id="heroLead" class="mt-4 text-sm leading-8 text-white/80"></p>
+        <div class="flex gap-3 mt-6 flex-wrap">
+          <button data-nav="events" class="rounded-full bg-white text-navy font-bold text-sm px-8 py-3">大会をさがす</button>
+          <button data-nav="ranking" class="rounded-full border border-white/50 font-bold text-sm px-8 py-3 hover:bg-white/10">ランキングを見る</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="flex items-baseline gap-4 flex-wrap pt-8 pb-4">
+      <span class="sec-en text-[clamp(28px,4vw,44px)]">Numbers</span>
+      <span class="text-[14.4px] font-bold tracking-wider">ポータルの数字</span>
+      <span id="asOfNote" class="ml-auto text-xs text-ink-mute"></span>
+    </div>
+    <div id="homeStats" class="grid grid-cols-2 lg:grid-cols-4 gap-px bg-rule border border-rule"></div>
+
+    <div class="flex items-baseline gap-4 flex-wrap pt-8 pb-4">
+      <span class="sec-en text-[clamp(28px,4vw,44px)]">Information</span>
+      <span class="text-[14.4px] font-bold tracking-wider">お知らせ</span>
+      <button data-nav="news" class="ml-auto text-xs text-ink-mute hover:text-navy underline underline-offset-4">すべて見る</button>
+    </div>
+    <div class="bg-white px-5 sm:px-9 py-6"><div id="homeNews"></div></div>
+
+    <div class="flex items-baseline gap-4 flex-wrap pt-8 pb-4">
+      <span class="sec-en text-[clamp(28px,4vw,44px)]">Upcoming</span>
+      <span class="text-[14.4px] font-bold tracking-wider">エントリー受付中の大会</span>
+      <span class="ml-auto text-xs text-ink-mute">締切が近い順</span>
+    </div>
+    <div class="bg-white px-5 sm:px-9 py-6">
+      <div id="homeEvents"></div>
+      <div class="mt-5"><button data-nav="events" class="rounded-full bg-navy text-white font-bold text-sm px-8 py-3">大会情報をすべて見る</button></div>
+    </div>
+
+    <div class="grid lg:grid-cols-2 gap-7 mt-9">
+      <div>
+        <div class="flex items-baseline gap-4 pb-4"><span class="sec-en text-[32px]">Calendar</span><span class="text-[14.4px] font-bold tracking-wider">月別の開催予定</span></div>
+        <div class="bg-white px-6 py-6"><div id="monthChart"></div>
+          <p class="text-[11px] text-ink-mute mt-2.5 leading-relaxed">グレード別の内訳はバーにカーソルを合わせると表示されます。</p></div>
+      </div>
+      <div>
+        <div class="flex items-baseline gap-4 pb-4"><span class="sec-en text-[32px]">Ranking</span><span class="text-[14.4px] font-bold tracking-wider">男子シングルス・フリー</span></div>
+        <div class="bg-white px-6 py-6"><table class="w-full text-sm" id="miniRank"></table>
+          <div class="mt-4"><button data-nav="ranking" class="rounded-full bg-navy text-white font-bold text-sm px-8 py-3">全順位を見る</button></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== 大会情報 ========== -->
+  <section data-view="events" class="view" hidden>
+    <div class="flex items-baseline gap-4 flex-wrap pt-8 pb-4">
+      <span class="sec-en text-[clamp(28px,4vw,44px)]">Tournaments</span><span class="text-[14.4px] font-bold tracking-wider">大会情報</span>
+    </div>
+    <div class="bg-white px-5 sm:px-9 py-8">
+      <p class="text-[13.5px] text-ink-soft mb-5">都道府県協会・地区協会・クラブ主催の公認大会を横断して検索できます。行をクリックすると要項と獲得ポイントが開きます。</p>
+      <div class="flex gap-4 flex-wrap items-center py-4 border-b border-rule" id="evFilters"></div>
+      <div class="flex gap-3 flex-wrap items-center py-4">
+        <span class="text-[11.5px] font-bold text-ink-soft tracking-wider">グレード</span>
+        <div class="flex gap-1.5 flex-wrap" id="evGrades"></div>
+        <button data-status="open" aria-pressed="false" class="chip rounded-full border border-rule px-4 py-1 text-[12.5px] font-bold text-ink-soft">受付中のみ</button>
+        <span id="evCount" class="ml-auto text-xs text-ink-mute"></span>
+      </div>
+      <div id="eventList"></div>
+      <div id="evMore" class="flex justify-center pt-5" hidden>
+        <button class="rounded-full border border-rule bg-white px-8 py-2.5 text-sm font-bold">さらに表示する</button></div>
+    </div>
+  </section>
+
+  <!-- ========== ランキング ========== -->
+  <section data-view="ranking" class="view" hidden>
+    <div class="flex items-baseline gap-4 flex-wrap pt-8 pb-4">
+      <span class="sec-en text-[clamp(28px,4vw,44px)]">Rankings</span><span class="text-[14.4px] font-bold tracking-wider">日本ランキング（BTP）</span>
+      <span id="rankNote" class="ml-auto text-xs text-ink-mute"></span>
+    </div>
+    <div class="bg-white px-5 sm:px-9 py-8">
+      <div class="flex gap-5 flex-wrap items-center py-4 border-b border-rule">
+        <div class="flex items-center gap-2"><span class="text-[11.5px] font-bold text-ink-soft tracking-wider">種目</span><div class="flex gap-1.5" id="rEvent"></div></div>
+        <div class="flex items-center gap-2"><span class="text-[11.5px] font-bold text-ink-soft tracking-wider">性別</span><div class="flex gap-1.5" id="rSex"></div></div>
+        <div class="flex items-center gap-2"><span class="text-[11.5px] font-bold text-ink-soft tracking-wider">カテゴリ</span><div class="flex gap-1.5" id="rCat"></div></div>
+        <div class="flex items-center gap-2"><span class="text-[11.5px] font-bold text-ink-soft tracking-wider">所属</span>
+          <select id="rPref" class="border border-rule px-2 py-1.5 text-[13px] bg-white"><option value="">全国</option></select></div>
+        <input id="rQ" type="text" placeholder="選手名で探す" class="ml-auto border border-rule px-3 py-1.5 text-[13px] w-48">
+      </div>
+      <p id="rankSummary" class="text-xs text-ink-mute mt-4"></p>
+      <div class="mt-3 overflow-x-auto"><table class="w-full text-sm" id="rankTable"></table></div>
+      <div id="rankMore" class="flex justify-center pt-5" hidden>
+        <button class="rounded-full border border-rule bg-white px-8 py-2.5 text-sm font-bold">さらに表示する</button></div>
+    </div>
+  </section>
+
+  <!-- ========== 大会結果 ========== -->
+  <section data-view="results" class="view" hidden>
+    <div class="flex items-baseline gap-4 flex-wrap pt-8 pb-4">
+      <span class="sec-en text-[clamp(28px,4vw,44px)]">Results</span><span class="text-[14.4px] font-bold tracking-wider">大会結果</span>
+      <span class="ml-auto text-xs text-ink-mute">承認済みの大会のみ掲載</span>
+    </div>
+    <div class="bg-white px-5 sm:px-9 py-8">
+      <div class="flex gap-4 flex-wrap items-center py-4 border-b border-rule">
+        <div class="flex items-center gap-2"><span class="text-[11.5px] font-bold text-ink-soft tracking-wider">都道府県</span>
+          <select id="sPref" class="border border-rule px-2 py-1.5 text-[13px] bg-white"><option value="">すべて</option></select></div>
+        <div class="flex items-center gap-2"><span class="text-[11.5px] font-bold text-ink-soft tracking-wider">グレード</span>
+          <select id="sGrade" class="border border-rule px-2 py-1.5 text-[13px] bg-white"><option value="">すべて</option></select></div>
+        <input id="sQ" type="text" placeholder="大会名で探す" class="border border-rule px-3 py-1.5 text-[13px] w-48">
+        <span id="sCount" class="ml-auto text-xs text-ink-mute"></span>
+      </div>
+      <div id="resultList"></div>
+      <div id="sMore" class="flex justify-center pt-5" hidden>
+        <button class="rounded-full border border-rule bg-white px-8 py-2.5 text-sm font-bold">さらに表示する</button></div>
+    </div>
+  </section>
+
+  <!-- ========== お知らせ ========== -->
+  <section data-view="news" class="view" hidden>
+    <div class="flex items-baseline gap-4 flex-wrap pt-8 pb-4">
+      <span class="sec-en text-[clamp(28px,4vw,44px)]">News</span><span class="text-[14.4px] font-bold tracking-wider">お知らせ</span>
+    </div>
+    <div class="bg-white px-5 sm:px-9 py-8"><div id="newsList"></div></div>
+  </section>
+
+  <!-- ========== 制度 ========== -->
+  <section data-view="about" class="view" hidden>
+    <div class="flex items-baseline gap-4 flex-wrap pt-8 pb-4">
+      <span class="sec-en text-[clamp(28px,4vw,44px)]">System</span><span class="text-[14.4px] font-bold tracking-wider">BTPランキング制度</span>
+    </div>
+    <div class="bg-white px-5 sm:px-9 py-8"><div id="aboutBody" class="max-w-[80ch]"></div></div>
+  </section>
+</main>
+
+<!-- ===== フッター ===== -->
+<footer class="relative z-10 bg-navy text-white mt-12">
+  <div class="max-w-[1180px] mx-auto px-6 py-9 text-center text-[13px] leading-9">
+    <div id="footNav" class="flex justify-center gap-4 flex-wrap"></div>
+    <p id="footContact" class="text-[12px] text-white/60 mt-2"></p>
+    <button id="adminLoginBtn" class="mt-4 text-[11.5px] text-white/45 hover:text-white underline underline-offset-4">管理者向けログイン</button>
+  </div>
+  <div class="bg-brand-red text-center text-xs font-bold py-3 tracking-wide">
+    © Japan Bound Tennis Association. / J.B.T.A.I.F.
+  </div>
+</footer>
+
+<!-- ===== 汎用モーダル ===== -->
+<div id="modal" class="fixed inset-0 z-40 hidden items-center justify-center p-5">
+  <div class="absolute inset-0 bg-navy/60" data-close></div>
+  <div class="relative bg-white w-full max-w-[640px] max-h-[86vh] overflow-auto">
+    <button data-close class="absolute top-4 right-4 text-white/90 w-7 h-7 text-[15px]">✕</button>
+    <div id="modalHead" class="bg-navy text-white px-6 py-5"></div>
+    <div id="modalBody" class="px-6 py-6"></div>
+  </div>
+</div>
+
+<!-- ===== ツールチップ / トースト ===== -->
+<div id="tip" class="fixed z-50 opacity-0 pointer-events-none transition-opacity bg-navy text-white text-xs px-3 py-2 max-w-[250px] leading-relaxed"></div>
+<div id="toast" class="fixed left-1/2 -translate-x-1/2 bottom-8 z-[60] hidden">
+  <div id="toastBody" class="px-5 py-3 text-sm font-bold shadow-lg"></div>
+</div>
+
+<!-- ===== 管理画面 ===== -->
+<div id="adminOverlay" class="fixed inset-0 z-50 bg-paper overflow-auto" hidden>
+  <div class="sticky top-0 z-10 bg-navy text-white">
+    <div class="max-w-[1180px] mx-auto px-6 py-3 flex items-center gap-4 flex-wrap">
+      <b class="text-[15px]">管理画面</b>
+      <span id="admMode" class="text-[11px] px-2 py-0.5 bg-white/15"></span>
+      <span id="admUser" class="text-[11.5px] text-white/70"></span>
+      <div class="ml-auto flex gap-2 items-center flex-wrap">
+        <span id="admDirty" class="text-[11.5px] text-red-200 font-bold" hidden>● 未保存の変更あり</span>
+        <button id="admSave" class="rounded-full bg-white text-navy text-[12.5px] font-bold px-5 py-2">保存する</button>
+        <button id="admReload" class="rounded-full border border-white/40 text-[12.5px] font-bold px-4 py-2">再読み込み</button>
+        <button id="admClose" class="rounded-full border border-white/40 text-[12.5px] font-bold px-4 py-2">閉じる</button>
+      </div>
+    </div>
+    <div class="max-w-[1180px] mx-auto px-6 flex flex-wrap" id="admTabs"></div>
+  </div>
+  <div class="max-w-[1180px] mx-auto px-6 py-7"><div id="admBody"></div></div>
+</div>
+
+<!-- ===== ログイン ===== -->
+<div id="loginModal" class="fixed inset-0 z-50 hidden items-center justify-center p-5">
+  <div class="absolute inset-0 bg-navy/60" data-close-login></div>
+  <div class="relative bg-white w-full max-w-[420px] p-8">
+    <button data-close-login class="absolute top-3 right-4 text-ink-mute text-lg">✕</button>
+    <h2 class="text-lg font-bold">管理者向けログイン</h2>
+    <p class="text-[12.5px] text-ink-soft mt-2 leading-relaxed">許可されたGoogleアカウントでサインインしてください。</p>
+    <div id="gsiBtn" class="mt-5 flex justify-center"></div>
+    <div id="localLogin" class="mt-5" hidden>
+      <div class="bg-paper border-l-4 border-brand-red px-4 py-3 text-[12.5px] text-ink-soft leading-relaxed">
+        <b class="text-ink block mb-1">サーバー未接続（お試しモード）</b>
+        Googleサインインの設定がまだです。編集内容はこの端末のブラウザにだけ保存され、
+        ほかの人には見えません。設定が済むと、この画面はGoogleサインインに切り替わります。
+      </div>
+      <button id="localLoginBtn" class="w-full mt-4 rounded-full bg-navy text-white font-bold text-sm py-3">お試しモードで管理画面を開く</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<script>
+/* =====================================================================
+   設定 — ここだけ書き換えれば本番につながります
+   ===================================================================== */
+
+/* Apps Script のウェブアプリURL。空のままだとサーバーには一切つなぎません（お試しモード） */
+const SHEETS_API_URL = '';
+
+/* Google OAuth のクライアントID。公開してよい値です。空だとお試しモードになります */
+const GOOGLE_CLIENT_ID = '';
+
+/* localStorage のキー接頭辞 */
+const LS_PREFIX = 'btp:';
+
+/* 一覧系データの種類 */
+const TYPES = ['tournaments', 'players', 'results', 'news'];
+</script>
+
+<script>const DEFAULT_DATA = {"tournaments":[{"id":"T0039","name":"2025 京都バウンドテニス選手権","grade":"G3","pref":"京都","venue":"長岡京市立総合体育館","date":"2025-12-10","deadline":"2025-11-12","cats":["フリー","ミドル"],"evs":["シングルス","ダブルス"],"draw":32,"fee":"2,500円","host":"京都バウンドテニス協会","entryUrl":"","docUrl":"","published":true},{"id":"T0085","name":"第5回 岡山シニアフレンドリー大会","grade":"G5","pref":"岡山","venue":"岡山市総合文化体育館","date":"2025-12-12","deadline":"2025-12-01","cats":["シニア"],"evs":["ダブルス"],"draw":18,"fee":"1,500円","host":"岡山BTシニアクラブ","entryUrl":"","docUrl":"","published":true},{"id":"T0017","name":"第36回 北信越ブロックバウンドテニス大会","grade":"G2","pref":"長野","venue":"長野市真島総合スポーツアリーナ","date":"2025-12-13","deadline":"2025-11-18","cats":["フリー","ミドル","シニア"],"evs":["シングルス","ダブルス","ミックスダブルス"],"draw":38,"fee":"3,500円","host":"北信越バウンドテニス連盟","entryUrl":"","docUrl":"","published":true},{"id":"T0029","name":"2025 埼玉バウンドテニス選手権","grade":"G3","pref":"埼玉","venue":"さいたま市記念総合体育館","date":"2025-12-17","deadline":"2025-11-16","cats":["フリー","ミドル","シニア"],"evs":["シングルス","ダブルス"],"draw":40,"fee":"2,500円","host":"埼玉バウンドテニス協会","entryUrl":"","docUrl":"","published":true},{"id":"T0063","name":"第6回 信州さわやかカップ","grade":"G4","pref":"長野","venue":"長野市真島総合スポーツアリーナ","date":"2025-12-20","deadline":"2025-11-27","cats":["フリー"],"evs":["シングルス","ダブルス","ミックスダブルス"],"draw":20,"fee":"2,000円","host":"長野県バウンドテニス協会 北信支部","entryUrl":"","docUrl":"","published":true},{"id":"T0071","name":"第14回 多摩オープン","grade":"G4","pref":"東京","venue":"駒沢オリンピック公園総合運動場 屋内球技場","date":"2025-12-20","deadline":"2025-11-27","cats":["フリー"],"evs":["シングルス","ダブルス"],"draw":21,"fee":"2,000円","host":"多摩バウンドテニス協会","entryUrl":"","docUrl":"","published":true},{"id":"T0049","name":"2025 福岡バウンドテニス選手権","grade":"G3","pref":"福岡","venue":"福岡市民体育館","date":"2025-12-24","deadline":"2025-11-20","cats":["フリー","ミドル","シニア"],"evs":["シングルス","ダブルス"],"draw":38,"fee":"2,500円","host":"福岡バウンドテニス協会","entryUrl":"","docUrl":"","published":true},{"id":"T0078","name":"月例オープン 品川サーキット 第11戦","grade":"G5","pref":"東京","venue":"駒沢オリンピック公園総合運動場 屋内球技場","date":"2026-08-06","deadline":"2026-08-01","cats":["フリー","ミドル"],"evs":["ダブルス"],"draw":12,"fee":"1,500円","host":"品川BTサークル","entryUrl":"","docUrl":"","published":true},{"id":"T0022","name":"2026 北海道バウンドテニス選手権","grade":"G3","pref":"北海道","venue":"札幌市中央体育館","date":"2026-08-10","deadline":"2026-07-12","cats":["フリー","ミドル"],"evs":["シングルス","ダブルス"],"draw":40,"fee":"2,500円","host":"北海道バウンドテニス協会","entryUrl":"","docUrl":"","published":true},{"id":"T0052","name":"2026 熊本バウンドテニス選手権","grade":"G3","pref":"熊本","venue":"熊本県立総合体育館","date":"2026-08-10","deadline":"2026-07-12","cats":["フリー","ミドル"],"evs":["シングルス","ダブルス"],"draw":25,"fee":"2,500円","host":"熊本バウンドテニス協会","entryUrl":"","docUrl":"","published":true},{"id":"T0042","name":"2026 大阪バウンドテニス選手権","grade":"G3","pref":"大阪","venue":"門真市民プラザ体育館","date":"2026-08-17","deadline":"2026-07-16","cats":["フリー","ミドル","シニア"],"evs":["シングルス","ダブルス"],"draw":29,"fee":"2,500円","host":"大阪バウンドテニス協会","entryUrl":"","docUrl":"","published":true},{"id":"T0088","name":"第2回 全国BTラリー戦チャレンジ","grade":"G5","pref":"広島","venue":"広島県立総合体育館","date":"2026-08-18","deadline":"2026-08-01","cats":["フリー","ミドル"],"evs":["BTラリー戦"],"draw":16,"fee":"1,500円","host":"広島県バウンドテニス協会","entryUrl":"","docUrl":"","published":true},{"id":"T0032","name":"2026 千葉バウンドテニス選手権","grade":"G3","pref":"千葉","venue":"千葉ポートアリーナ","date":"2026-08-24","deadline":"2026-07-20","cats":["フリー","ミドル","シニア"],"evs":["シングルス","ダブルス"],"draw":32,"fee":"2,500円","host":"千葉バウンドテニス協会","entryUrl":"","docUrl":"","published":true},{"id":"T0004","name":"第29回 関東ブロックバウンドテニス大会","grade":"G2","pref":"埼玉","venue":"さいたま市記念総合体育館","date":"2026-09-06","deadline":"2026-08-15","cats":["フリー","ミドル","シニア"],"evs":["シングルス","ダブルス","ミックスダブルス"],"draw":44,"fee":"3,500円","host":"関東バウンドテニス連盟","entryUrl":"","docUrl":"","published":true},{"id":"T0034","name":"2026 新潟バウンドテニス選手権","grade":"G3","pref":"新潟","venue":"新潟市東総合スポーツセンター","date":"2026-09-10","deadline":"2026-08-12","cats":["フリー","ミドル"],"evs":["シングルス","ダブルス"],"draw":37,"fee":"2,500円","host":"新潟バウンドテニス協会","entryUrl":"","docUrl":"","published":true},{"id":"T0080","name":"第4回 讃岐うどんカップ","grade":"G5","pref":"香川","venue":"高松市総合体育館","date":"2026-09-12","deadline":"2026-09-01","cats":["フリー","ミドル"],"evs":["シングルス"],"draw":17,"fee":"1,500円","host":"BTクラブ高松","entryUrl":"","docUrl":"","published":true},{"id":"T0012","name":"第33回 北海道・東北ブロックバウンドテニス大会","grade":"G2","pref":"宮城","venue":"仙台市青葉体育館","date":"2026-09-13","deadline":"2026-08-18","cats":["フリー","ミドル","シニア"],"evs":["シングルス","ダブルス","ミックスダブルス"],"draw":43,"fee":"3,500円","host":"北海道・東北バウンドテニス連盟","entryUrl":"","docUrl":"","published":true},{"id":"T0058","name":"第12回 湘南オープンバウンドテニス大会","grade":"G4","pref":"神奈川","venue":"横浜市南スポーツセンター","date":"2026-09-13","deadline":"2026-08-25","cats":["フリー","ミドル"],"evs":["シングルス","ダブルス","ミックスダブルス"],"draw":17,"fee":"2,000円","host":"湘南バウンドテニス協会","entryUrl":"","docUrl":"","published":true},{"id":"T0066","name":"第10回 播磨オープン","grade":"G4","pref":"兵庫","venue":"姫路市中央体育館","date":"2026-09-13","deadline":"2026-08-25","cats":["フリー","ミドル"],"evs":["シングルス","ダブルス"],"draw":22,"fee":"2,000円","host":"播磨バウンドテニス協会","entryUrl":"","docUrl":"","published":true},{"id":"T0074","name":"第11回 三河オープン","grade":"G4","pref":"愛知","venue":"名古屋市枇杷島スポーツセンター","date":"2026-09-13","deadline":"2026-08-25","cats":["フリー","ミドル"],"evs":["シングルス","ダブルス"],"draw":21,"fee":"2,000円","host":"三河バウンドテニス協会","entryUrl":"","docUrl":"","published":true},{"id":"T0024","name":"2026 宮城バウンドテニス選手権","grade":"G3","pref":"宮城","venue":"仙台市青葉体育館","date":"2026-09-17","deadline":"2026-08-16","cats":["フリー","ミドル","シニア"],"evs":["シングルス","ダブルス"],"draw":39,"fee":"2,500円","host":"宮城バウンドテニス協会","entryUrl":"","docUrl":"","published":true},{"id":"T0054","name":"2026 香川バウンドテニス選手権","grade":"G3","pref":"香川","venue":"高松市総合体育館","date":"2026-09-17","deadline":"2026-08-16","cats":["フリー","ミドル","シニア"],"evs":["シングルス","ダブルス"],"draw":42,"fee":"2,500円","host":"香川バウンドテニス協会","entryUrl":"","docUrl":"","published":true},{"id":"T0044","name":"2026 兵庫バウンドテニス選手権","grade":"G3","pref":"兵庫","venue":"姫路市中央体育館","date":"2026-09-24","deadline":"2026-08-20","cats":["フリー","ミドル","シニア"],"evs":["シングルス","ダブルス"],"draw":38,"fee":"2,500円","host":"兵庫バウンドテニス協会","entryUrl":"","docUrl":"","published":true},{"id":"T0020","name":"2026 全日本ミドル・シニア選手権大会","grade":"G2","pref":"愛知","venue":"名古屋市枇杷島スポーツセンター","date":"2026-09-27","deadline":"2026-08-29","cats":["ミドル","シニア"],"evs":["シングルス","ダブルス"],"draw":48,"fee":"4,000円","host":"日本バウンドテニス協会","entryUrl":"","docUrl":"","published":true},{"id":"T0046","name":"2026 岡山バウンドテニス選手権","grade":"G3","pref":"岡山","venue":"岡山市総合文化体育館","date":"2026-10-10","deadline":"2026-09-12","cats":["フリー","ミドル"],"evs":["シングルス","ダブルス"],"draw":30,"fee":"2,500円","host":"岡山バウンドテニス協会","entryUrl":"","docUrl":"","published":true},{"id":"T0006","name":"第30回 東海ブロックバウンドテニス大会","grade":"G2","pref":"静岡","venue":"静岡市中央体育館","date":"2026-10-13","deadline":"2026-09-18","cats":["フリー","ミドル","シニア"],"evs":["シングルス","ダブルス","ミックスダブルス"],"draw":38,"fee":"3,500円","host":"東海バウンドテニス連盟","entryUrl":"","docUrl":"","published":true},{"id":"T0036","name":"2026 長野バウンドテニス選手権","grade":"G3","pref":"長野","venue":"長野市真島総合スポーツアリーナ","date":"2026-10-17","deadline":"2026-09-16","cats":["フリー","ミドル","シニア"],"evs":["シングルス","ダブルス"],"draw":33,"fee":"2,500円","host":"長野バウンドテニス協会","entryUrl":"","docUrl":"","published":true},{"id":"T0082","name":"第3回 那覇ビーチサイドカップ","grade":"G5","pref":"沖縄","venue":"那覇市民体育館","date":"2026-10-18","deadline":"2026-10-01","cats":["フリー","ミドル"],"evs":["ダブルス"],"draw":11,"fee":"1,500円","host":"沖縄BT愛好会","entryUrl":"","docUrl":"","published":true},{"id":"T0014","name":"第34回 中国ブロックバウンドテニス大会","grade":"G2","pref":"広島","venue":"広島県立総合体育館","date":"2026-10-20","deadline":"2026-09-21","cats":["フリー","ミドル","シニア"],"evs":["シングルス","ダブルス","ミックスダブルス"],"draw":41,"fee":"3,500円","host":"中国バウンドテニス連盟","entryUrl":"","docUrl":"","published":true},{"id":"T0060","name":"第8回 みちのくオープン","grade":"G4","pref":"宮城","venue":"仙台市青葉体育館","date":"2026-10-20","deadline":"2026-09-27","cats":["フリー"],"evs":["シングルス","ダブルス"],"draw":24,"fee":"2,000円","host":"仙台バウンドテニス連盟","entryUrl":"","docUrl":"","published":true},{"id":"T0068","name":"第9回 京都西山カップ","grade":"G4","pref":"京都","venue":"長岡京市立総合体育館","date":"2026-10-20","deadline":"2026-09-27","cats":["フリー"],"evs":["シングルス","ダブルス"],"draw":24,"fee":"2,000円","host":"京都府バウンドテニス協会 乙訓支部","entryUrl":"","docUrl":"","published":true},{"id":"T0076","name":"第5回 越後カップ","grade":"G4","pref":"新潟","venue":"新潟市東総合スポーツセンター","date":"2026-10-20","deadline":"2026-09-27","cats":["フリー"],"evs":["シングルス","ダブルス","ミックスダブルス"],"draw":22,"fee":"2,000円","host":"新潟県バウンドテニス協会 中越支部","entryUrl":"","docUrl":"","published":true},{"id":"T0026","name":"2026 東京バウンドテニス選手権","grade":"G3","pref":"東京","venue":"駒沢オリンピック公園総合運動場 屋内球技場","date":"2026-10-24","deadline":"2026-09-20","cats":["フリー","ミドル","シニア"],"evs":["シングルス","ダブルス"],"draw":37,"fee":"2,500円","host":"東京バウンドテニス協会","entryUrl":"","docUrl":"","published":true},{"id":"T0056","name":"2026 沖縄バウンドテニス選手権","grade":"G3","pref":"沖縄","venue":"那覇市民体育館","date":"2026-10-24","deadline":"2026-09-20","cats":["フリー","ミドル","シニア"],"evs":["シングルス","ダブルス"],"draw":24,"fee":"2,500円","host":"沖縄バウンドテニス協会","entryUrl":"","docUrl":"","published":true},{"id":"T0016","name":"第35回 四国ブロックバウンドテニス大会","grade":"G2","pref":"香川","venue":"高松市総合体育館","date":"2026-11-06","deadline":"2026-10-15","cats":["フリー","ミドル","シニア"],"evs":["シングルス","ダブルス","ミックスダブルス"],"draw":39,"fee":"3,500円","host":"四国バウンドテニス連盟","entryUrl":"","docUrl":"","published":true},{"id":"T0084","name":"新潟レディースバウンドテニス交流戦","grade":"G5","pref":"新潟","venue":"新潟市東総合スポーツセンター","date":"2026-11-06","deadline":"2026-11-01","cats":["フリー","ミドル"],"evs":["シングルス"],"draw":10,"fee":"1,500円","host":"新潟レディースBT会","entryUrl":"","docUrl":"","published":true},{"id":"T0028","name":"2026 神奈川バウンドテニス選手権","grade":"G3","pref":"神奈川","venue":"横浜市南スポーツセンター","date":"2026-11-10","deadline":"2026-10-12","cats":["フリー","ミドル"],"evs":["シングルス","ダブルス"],"draw":36,"fee":"2,500円","host":"神奈川バウンドテニス協会","entryUrl":"","docUrl":"","published":true},{"id":"T0062","name":"第15回 北九州市民バウンドテニス大会","grade":"G4","pref":"福岡","venue":"福岡市民体育館","date":"2026-11-13","deadline":"2026-10-25","cats":["フリー","ミドル"],"evs":["シングルス","ダブルス"],"draw":17,"fee":"2,000円","host":"北九州市バウンドテニス協会","entryUrl":"","docUrl":"","published":true},{"id":"T0070","name":"第7回 阿波おどりオープン","grade":"G4","pref":"徳島","venue":"徳島市立体育館","date":"2026-11-13","deadline":"2026-10-25","cats":["フリー","ミドル"],"evs":["シングルス","ダブルス","ミックスダブルス"],"draw":20,"fee":"2,000円","host":"徳島県バウンドテニス協会","entryUrl":"","docUrl":"","published":true},{"id":"T0048","name":"2026 広島バウンドテニス選手権","grade":"G3","pref":"広島","venue":"広島県立総合体育館","date":"2026-11-17","deadline":"2026-10-16","cats":["フリー","ミドル","シニア"],"evs":["シングルス","ダブルス"],"draw":25,"fee":"2,500円","host":"広島バウンドテニス協会","entryUrl":"","docUrl":"","published":true},{"id":"T0008","name":"第31回 近畿ブロックバウンドテニス大会","grade":"G2","pref":"兵庫","venue":"姫路市中央体育館","date":"2026-11-20","deadline":"2026-10-21","cats":["フリー","ミドル","シニア"],"evs":["シングルス","ダブルス","ミックスダブルス"],"draw":38,"fee":"3,500円","host":"近畿バウンドテニス連盟","entryUrl":"","docUrl":"","published":true},{"id":"T0002","name":"第44回 全日本バウンドテニス選手権大会","grade":"G1","pref":"大阪","venue":"門真市民プラザ体育館","date":"2026-11-21","deadline":"2026-10-10","cats":["フリー","ミドル","シニア"],"evs":["シングルス","ダブルス"],"draw":64,"fee":"5,000円","host":"日本バウンドテニス協会","entryUrl":"","docUrl":"","published":true},{"id":"T0038","name":"2026 愛知バウンドテニス選手権","grade":"G3","pref":"愛知","venue":"名古屋市枇杷島スポーツセンター","date":"2026-11-24","deadline":"2026-10-20","cats":["フリー","ミドル","シニア"],"evs":["シングルス","ダブルス"],"draw":25,"fee":"2,500円","host":"愛知バウンドテニス協会","entryUrl":"","docUrl":"","published":true},{"id":"T0010","name":"第32回 九州・沖縄ブロックバウンドテニス大会","grade":"G2","pref":"福岡","venue":"福岡市民体育館","date":"2026-12-06","deadline":"2026-11-15","cats":["フリー","ミドル","シニア"],"evs":["シングルス","ダブルス","ミックスダブルス"],"draw":34,"fee":"3,500円","host":"九州・沖縄バウンドテニス連盟","entryUrl":"","docUrl":"","published":true},{"id":"T0040","name":"2026 京都バウンドテニス選手権","grade":"G3","pref":"京都","venue":"長岡京市立総合体育館","date":"2026-12-10","deadline":"2026-11-12","cats":["フリー","ミドル"],"evs":["シングルス","ダブルス"],"draw":33,"fee":"2,500円","host":"京都バウンドテニス協会","entryUrl":"","docUrl":"","published":true},{"id":"T0086","name":"第5回 岡山シニアフレンドリー大会","grade":"G5","pref":"岡山","venue":"岡山市総合文化体育館","date":"2026-12-12","deadline":"2026-12-01","cats":["シニア"],"evs":["ダブルス"],"draw":13,"fee":"1,500円","host":"岡山BTシニアクラブ","entryUrl":"","docUrl":"","published":true},{"id":"T0018","name":"第36回 北信越ブロックバウンドテニス大会","grade":"G2","pref":"長野","venue":"長野市真島総合スポーツアリーナ","date":"2026-12-13","deadline":"2026-11-18","cats":["フリー","ミドル","シニア"],"evs":["シングルス","ダブルス","ミックスダブルス"],"draw":39,"fee":"3,500円","host":"北信越バウンドテニス連盟","entryUrl":"","docUrl":"","published":true},{"id":"T0030","name":"2026 埼玉バウンドテニス選手権","grade":"G3","pref":"埼玉","venue":"さいたま市記念総合体育館","date":"2026-12-17","deadline":"2026-11-16","cats":["フリー","ミドル","シニア"],"evs":["シングルス","ダブルス"],"draw":34,"fee":"2,500円","host":"埼玉バウンドテニス協会","entryUrl":"","docUrl":"","published":true},{"id":"T0064","name":"第6回 信州さわやかカップ","grade":"G4","pref":"長野","venue":"長野市真島総合スポーツアリーナ","date":"2026-12-20","deadline":"2026-11-27","cats":["フリー"],"evs":["シングルス","ダブルス","ミックスダブルス"],"draw":19,"fee":"2,000円","host":"長野県バウンドテニス協会 北信支部","entryUrl":"","docUrl":"","published":true},{"id":"T0072","name":"第14回 多摩オープン","grade":"G4","pref":"東京","venue":"駒沢オリンピック公園総合運動場 屋内球技場","date":"2026-12-20","deadline":"2026-11-27","cats":["フリー"],"evs":["シングルス","ダブルス"],"draw":23,"fee":"2,000円","host":"多摩バウンドテニス協会","entryUrl":"","docUrl":"","published":true},{"id":"T0050","name":"2026 福岡バウンドテニス選手権","grade":"G3","pref":"福岡","venue":"福岡市民体育館","date":"2026-12-24","deadline":"2026-11-20","cats":["フリー","ミドル","シニア"],"evs":["シングルス","ダブルス"],"draw":39,"fee":"2,500円","host":"福岡バウンドテニス協会","entryUrl":"","docUrl":"","published":true}],"players":[{"id":"P0001","name":"須賀 翔","kana":"","pref":"新潟","sex":"男","birth":1975,"regno":"BT-21-00000","active":true},{"id":"P0005","name":"赤峰 佳彦","kana":"","pref":"岩手","sex":"男","birth":1967,"regno":"BT-21-00148","active":true},{"id":"P0006","name":"南雲 詩織","kana":"","pref":"兵庫","sex":"女","birth":1957,"regno":"BT-20-00185","active":true},{"id":"P0009","name":"相良 健吾","kana":"","pref":"新潟","sex":"男","birth":1968,"regno":"BT-21-00296","active":true},{"id":"P0011","name":"蓮沼 湊","kana":"","pref":"和歌山","sex":"男","birth":1992,"regno":"BT-23-00370","active":true},{"id":"P0014","name":"四方田 瑞穂","kana":"","pref":"岡山","sex":"女","birth":1959,"regno":"BT-20-00481","active":true},{"id":"P0016","name":"鴻巣 真澄","kana":"","pref":"青森","sex":"女","birth":2007,"regno":"BT-25-00555","active":true},{"id":"P0018","name":"宮下 彩乃","kana":"","pref":"佐賀","sex":"女","birth":1985,"regno":"BT-22-00629","active":true},{"id":"P0019","name":"五十嵐 真也","kana":"","pref":"岩手","sex":"男","birth":2001,"regno":"BT-24-00666","active":true},{"id":"P0021","name":"土田 悠斗","kana":"","pref":"山梨","sex":"男","birth":1974,"regno":"BT-21-00740","active":true},{"id":"P0025","name":"黒岩 涼太","kana":"","pref":"長野","sex":"男","birth":1987,"regno":"BT-23-00888","active":true},{"id":"P0027","name":"南雲 悠斗","kana":"","pref":"奈良","sex":"男","birth":1975,"regno":"BT-21-00962","active":true},{"id":"P0028","name":"八重樫 奈緒","kana":"","pref":"富山","sex":"女","birth":1990,"regno":"BT-23-00999","active":true},{"id":"P0029","name":"雪野 悠斗","kana":"","pref":"徳島","sex":"男","birth":1986,"regno":"BT-22-01036","active":true},{"id":"P0030","name":"日下部 綾","kana":"","pref":"鹿児島","sex":"女","birth":1948,"regno":"BT-19-01073","active":true},{"id":"P0031","name":"長谷部 亮","kana":"","pref":"岐阜","sex":"男","birth":2005,"regno":"BT-24-01110","active":true},{"id":"P0032","name":"柏木 有紀","kana":"","pref":"大分","sex":"女","birth":1959,"regno":"BT-20-01147","active":true},{"id":"P0033","name":"南雲 隼人","kana":"","pref":"鹿児島","sex":"男","birth":2004,"regno":"BT-24-01184","active":true},{"id":"P0039","name":"北大路 悠斗","kana":"","pref":"佐賀","sex":"男","birth":1968,"regno":"BT-21-01406","active":true},{"id":"P0040","name":"長谷部 菜月","kana":"","pref":"滋賀","sex":"女","birth":1967,"regno":"BT-21-01443","active":true},{"id":"P0043","name":"雪野 裕也","kana":"","pref":"鹿児島","sex":"男","birth":2005,"regno":"BT-24-01554","active":true},{"id":"P0044","name":"矢作 茉莉","kana":"","pref":"岩手","sex":"女","birth":2007,"regno":"BT-25-01591","active":true},{"id":"P0046","name":"篠塚 奈緒","kana":"","pref":"鹿児島","sex":"女","birth":1982,"regno":"BT-22-01665","active":true},{"id":"P0047","name":"雪野 大輔","kana":"","pref":"山梨","sex":"男","birth":1977,"regno":"BT-22-01702","active":true},{"id":"P0052","name":"轡田 柚希","kana":"","pref":"山形","sex":"女","birth":1960,"regno":"BT-20-01887","active":true},{"id":"P0053","name":"鵜飼 響","kana":"","pref":"長野","sex":"男","birth":1963,"regno":"BT-20-01924","active":true},{"id":"P0054","name":"阿久津 佳奈","kana":"","pref":"山形","sex":"女","birth":1965,"regno":"BT-20-01961","active":true},{"id":"P0057","name":"阿久津 岳","kana":"","pref":"岡山","sex":"男","birth":1966,"regno":"BT-20-02072","active":true},{"id":"P0058","name":"岸辺 奈緒","kana":"","pref":"福岡","sex":"女","birth":1973,"regno":"BT-21-02109","active":true},{"id":"P0063","name":"南雲 慎之介","kana":"","pref":"沖縄","sex":"男","birth":1963,"regno":"BT-20-02294","active":true},{"id":"P0065","name":"井狩 大河","kana":"","pref":"富山","sex":"男","birth":1953,"regno":"BT-19-02368","active":true},{"id":"P0072","name":"苅部 咲","kana":"","pref":"石川","sex":"女","birth":1985,"regno":"BT-22-02627","active":true},{"id":"P0075","name":"阿久津 裕也","kana":"","pref":"石川","sex":"男","birth":1978,"regno":"BT-22-02738","active":true},{"id":"P0078","name":"須賀 奈緒","kana":"","pref":"栃木","sex":"女","birth":2004,"regno":"BT-24-02849","active":true},{"id":"P0083","name":"篠塚 湊","kana":"","pref":"茨城","sex":"男","birth":1987,"regno":"BT-23-03034","active":true},{"id":"P0086","name":"丹羽 千秋","kana":"","pref":"福島","sex":"女","birth":1959,"regno":"BT-20-03145","active":true},{"id":"P0088","name":"北大路 史香","kana":"","pref":"兵庫","sex":"女","birth":1966,"regno":"BT-20-03219","active":true},{"id":"P0097","name":"四方田 隼人","kana":"","pref":"山口","sex":"男","birth":1948,"regno":"BT-19-03552","active":true},{"id":"P0099","name":"井狩 真也","kana":"","pref":"鹿児島","sex":"男","birth":1993,"regno":"BT-23-03626","active":true},{"id":"P0100","name":"相良 千秋","kana":"","pref":"岩手","sex":"女","birth":2002,"regno":"BT-24-03663","active":true},{"id":"P0102","name":"戸叶 佳奈","kana":"","pref":"岐阜","sex":"女","birth":1960,"regno":"BT-20-03737","active":true},{"id":"P0103","name":"鴻巣 隼人","kana":"","pref":"愛知","sex":"男","birth":1975,"regno":"BT-21-03774","active":true},{"id":"P0107","name":"長谷部 湊","kana":"","pref":"福井","sex":"男","birth":1996,"regno":"BT-23-03922","active":true},{"id":"P0108","name":"土田 奈緒","kana":"","pref":"鳥取","sex":"女","birth":1969,"regno":"BT-21-03959","active":true},{"id":"P0109","name":"蓮沼 克典","kana":"","pref":"宮崎","sex":"男","birth":1973,"regno":"BT-21-03996","active":true},{"id":"P0112","name":"宮下 千秋","kana":"","pref":"鹿児島","sex":"女","birth":1960,"regno":"BT-20-04107","active":true},{"id":"P0113","name":"土田 翔","kana":"","pref":"宮崎","sex":"男","birth":1977,"regno":"BT-22-04144","active":true},{"id":"P0118","name":"矢作 柚希","kana":"","pref":"東京","sex":"女","birth":2007,"regno":"BT-25-04329","active":true},{"id":"P0119","name":"苅部 涼太","kana":"","pref":"岩手","sex":"男","birth":1950,"regno":"BT-19-04366","active":true},{"id":"P0120","name":"丹羽 佳奈","kana":"","pref":"奈良","sex":"女","birth":1971,"regno":"BT-21-04403","active":true},{"id":"P0125","name":"佐久間 大河","kana":"","pref":"山梨","sex":"男","birth":1977,"regno":"BT-22-04588","active":true},{"id":"P0127","name":"矢野口 佳彦","kana":"","pref":"鹿児島","sex":"男","birth":1971,"regno":"BT-21-04662","active":true},{"id":"P0130","name":"苅部 紗都子","kana":"","pref":"群馬","sex":"女","birth":1951,"regno":"BT-19-04773","active":true},{"id":"P0131","name":"戸叶 隆之","kana":"","pref":"滋賀","sex":"男","birth":1997,"regno":"BT-24-04810","active":true},{"id":"P0132","name":"黒岩 史香","kana":"","pref":"山形","sex":"女","birth":1966,"regno":"BT-20-04847","active":true},{"id":"P0134","name":"土田 陽菜","kana":"","pref":"和歌山","sex":"女","birth":1953,"regno":"BT-19-04921","active":true},{"id":"P0137","name":"滝沢 湊","kana":"","pref":"大分","sex":"男","birth":1985,"regno":"BT-22-05032","active":true},{"id":"P0138","name":"佐久間 文乃","kana":"","pref":"宮城","sex":"女","birth":1985,"regno":"BT-22-05069","active":true},{"id":"P0139","name":"榎並 陽介","kana":"","pref":"香川","sex":"男","birth":1952,"regno":"BT-19-05106","active":true},{"id":"P0146","name":"雪野 詩織","kana":"","pref":"岐阜","sex":"女","birth":1979,"regno":"BT-22-05365","active":true},{"id":"P0147","name":"滝沢 悠斗","kana":"","pref":"群馬","sex":"男","birth":2003,"regno":"BT-24-05402","active":true},{"id":"P0148","name":"綿貫 紗都子","kana":"","pref":"熊本","sex":"女","birth":1992,"regno":"BT-23-05439","active":true},{"id":"P0149","name":"北大路 響","kana":"","pref":"福岡","sex":"男","birth":1997,"regno":"BT-24-05476","active":true},{"id":"P0150","name":"上遠野 史香","kana":"","pref":"埼玉","sex":"女","birth":1995,"regno":"BT-23-05513","active":true},{"id":"P0151","name":"鵜飼 隆之","kana":"","pref":"宮城","sex":"男","birth":1965,"regno":"BT-20-05550","active":true},{"id":"P0155","name":"佐久間 隼人","kana":"","pref":"奈良","sex":"男","birth":1990,"regno":"BT-23-05698","active":true},{"id":"P0156","name":"滝沢 茉莉","kana":"","pref":"京都","sex":"女","birth":1991,"regno":"BT-23-05735","active":true},{"id":"P0158","name":"入交 琴音","kana":"","pref":"大阪","sex":"女","birth":1995,"regno":"BT-23-05809","active":true},{"id":"P0159","name":"丹羽 裕也","kana":"","pref":"北海道","sex":"男","birth":1993,"regno":"BT-23-05846","active":true},{"id":"P0162","name":"滝沢 千秋","kana":"","pref":"千葉","sex":"女","birth":2007,"regno":"BT-25-05957","active":true},{"id":"P0167","name":"阿久津 敦","kana":"","pref":"岐阜","sex":"男","birth":1985,"regno":"BT-22-06142","active":true},{"id":"P0169","name":"岸辺 伸行","kana":"","pref":"鹿児島","sex":"男","birth":1966,"regno":"BT-20-06216","active":true},{"id":"P0172","name":"宮下 絵里","kana":"","pref":"福井","sex":"女","birth":1991,"regno":"BT-23-06327","active":true},{"id":"P0175","name":"北大路 佑","kana":"","pref":"東京","sex":"男","birth":1979,"regno":"BT-22-06438","active":true},{"id":"P0177","name":"綿貫 裕也","kana":"","pref":"福井","sex":"男","birth":1992,"regno":"BT-23-06512","active":true},{"id":"P0186","name":"佐久間 佳奈","kana":"","pref":"宮城","sex":"女","birth":1967,"regno":"BT-21-06845","active":true},{"id":"P0195","name":"佐久間 誠","kana":"","pref":"長崎","sex":"男","birth":1973,"regno":"BT-21-07178","active":true},{"id":"P0198","name":"星野 茉莉","kana":"","pref":"和歌山","sex":"女","birth":1961,"regno":"BT-20-07289","active":true},{"id":"P0202","name":"戸叶 奈緒","kana":"","pref":"愛媛","sex":"女","birth":1952,"regno":"BT-19-07437","active":true},{"id":"P0203","name":"鴻巣 弦","kana":"","pref":"茨城","sex":"男","birth":1964,"regno":"BT-20-07474","active":true},{"id":"P0206","name":"雪野 有紀","kana":"","pref":"宮崎","sex":"女","birth":1965,"regno":"BT-20-07585","active":true},{"id":"P0207","name":"富永 蒼","kana":"","pref":"山形","sex":"男","birth":2000,"regno":"BT-24-07622","active":true},{"id":"P0208","name":"鵜飼 佳奈","kana":"","pref":"長崎","sex":"女","birth":1971,"regno":"BT-21-07659","active":true},{"id":"P0209","name":"水無瀬 隼人","kana":"","pref":"長崎","sex":"男","birth":2000,"regno":"BT-24-07696","active":true},{"id":"P0210","name":"轡田 遥","kana":"","pref":"石川","sex":"女","birth":1952,"regno":"BT-19-07733","active":true},{"id":"P0211","name":"槙野 湊","kana":"","pref":"千葉","sex":"男","birth":1974,"regno":"BT-21-07770","active":true},{"id":"P0212","name":"加治佐 佳奈","kana":"","pref":"大阪","sex":"女","birth":1955,"regno":"BT-19-07807","active":true},{"id":"P0216","name":"上遠野 琴音","kana":"","pref":"鹿児島","sex":"女","birth":2007,"regno":"BT-25-07955","active":true},{"id":"P0217","name":"佐久間 翔","kana":"","pref":"東京","sex":"男","birth":1960,"regno":"BT-20-07992","active":true},{"id":"P0222","name":"槙野 綾","kana":"","pref":"京都","sex":"女","birth":1976,"regno":"BT-21-08177","active":true},{"id":"P0223","name":"赤峰 真也","kana":"","pref":"群馬","sex":"男","birth":1983,"regno":"BT-22-08214","active":true},{"id":"P0226","name":"須賀 可南子","kana":"","pref":"大阪","sex":"女","birth":1990,"regno":"BT-23-08325","active":true},{"id":"P0227","name":"勅使河原 蒼一","kana":"","pref":"東京","sex":"男","birth":1978,"regno":"BT-22-08362","active":true},{"id":"P0228","name":"真鍋 千聖","kana":"","pref":"千葉","sex":"女","birth":1960,"regno":"BT-20-08399","active":true},{"id":"P0230","name":"綿貫 菜月","kana":"","pref":"鹿児島","sex":"女","birth":1967,"regno":"BT-21-08473","active":true},{"id":"P0233","name":"篠塚 悠真","kana":"","pref":"宮崎","sex":"男","birth":1951,"regno":"BT-19-08584","active":true},{"id":"P0236","name":"長谷部 千聖","kana":"","pref":"兵庫","sex":"女","birth":1959,"regno":"BT-20-08695","active":true},{"id":"P0238","name":"鵜飼 史香","kana":"","pref":"福井","sex":"女","birth":1980,"regno":"BT-22-08769","active":true},{"id":"P0240","name":"苅部 智恵","kana":"","pref":"福井","sex":"女","birth":1956,"regno":"BT-19-08843","active":true},{"id":"P0241","name":"鴻巣 伸行","kana":"","pref":"新潟","sex":"男","birth":1965,"regno":"BT-20-08880","active":true},{"id":"P0244","name":"須賀 真央","kana":"","pref":"佐賀","sex":"女","birth":1972,"regno":"BT-21-08991","active":true},{"id":"P0246","name":"富永 彩乃","kana":"","pref":"青森","sex":"女","birth":1954,"regno":"BT-19-09065","active":true},{"id":"P0247","name":"相良 佑","kana":"","pref":"福岡","sex":"男","birth":1976,"regno":"BT-21-09102","active":true},{"id":"P0253","name":"苅部 大輔","kana":"","pref":"青森","sex":"男","birth":1952,"regno":"BT-19-09324","active":true},{"id":"P0254","name":"勅使河原 柚希","kana":"","pref":"埼玉","sex":"女","birth":2005,"regno":"BT-24-09361","active":true},{"id":"P0255","name":"岸辺 佳彦","kana":"","pref":"宮城","sex":"男","birth":1957,"regno":"BT-20-09398","active":true},{"id":"P0257","name":"相良 悠真","kana":"","pref":"東京","sex":"男","birth":1968,"regno":"BT-21-09472","active":true}],"results":[{"id":"R0001","tid":"T0017","ev":"シングルス","cat":"フリー","sex":"男子","draw":30,"place":"優勝","pid":"P0149","status":"承認済","submitted":"2025-12-16","note":""},{"id":"R0002","tid":"T0017","ev":"シングルス","cat":"フリー","sex":"男子","draw":30,"place":"準優勝","pid":"P0029","status":"承認済","submitted":"2025-12-16","note":""},{"id":"R0003","tid":"T0017","ev":"シングルス","cat":"フリー","sex":"男子","draw":30,"place":"ベスト4","pid":"P0167","status":"承認済","submitted":"2025-12-16","note":""},{"id":"R0004","tid":"T0017","ev":"シングルス","cat":"フリー","sex":"男子","draw":30,"place":"ベスト4","pid":"P0217","status":"承認済","submitted":"2025-12-16","note":""},{"id":"R0005","tid":"T0017","ev":"シングルス","cat":"フリー","sex":"女子","draw":30,"place":"優勝","pid":"P0044","status":"承認済","submitted":"2025-12-16","note":""},{"id":"R0006","tid":"T0017","ev":"シングルス","cat":"フリー","sex":"女子","draw":30,"place":"準優勝","pid":"P0158","status":"承認済","submitted":"2025-12-16","note":""},{"id":"R0007","tid":"T0017","ev":"シングルス","cat":"フリー","sex":"女子","draw":30,"place":"ベスト4","pid":"P0246","status":"承認済","submitted":"2025-12-16","note":""},{"id":"R0008","tid":"T0017","ev":"シングルス","cat":"フリー","sex":"女子","draw":30,"place":"ベスト4","pid":"P0108","status":"承認済","submitted":"2025-12-16","note":""},{"id":"R0009","tid":"T0017","ev":"シングルス","cat":"ミドル","sex":"男子","draw":30,"place":"優勝","pid":"P0175","status":"承認済","submitted":"2025-12-16","note":""},{"id":"R0010","tid":"T0017","ev":"シングルス","cat":"ミドル","sex":"男子","draw":30,"place":"準優勝","pid":"P0027","status":"承認済","submitted":"2025-12-16","note":""},{"id":"R0011","tid":"T0017","ev":"シングルス","cat":"ミドル","sex":"男子","draw":30,"place":"ベスト4","pid":"P0053","status":"承認済","submitted":"2025-12-16","note":""},{"id":"R0012","tid":"T0017","ev":"シングルス","cat":"ミドル","sex":"男子","draw":30,"place":"ベスト4","pid":"P0005","status":"承認済","submitted":"2025-12-16","note":""},{"id":"R0013","tid":"T0017","ev":"シングルス","cat":"ミドル","sex":"女子","draw":30,"place":"優勝","pid":"P0206","status":"承認済","submitted":"2025-12-16","note":""},{"id":"R0014","tid":"T0017","ev":"シングルス","cat":"ミドル","sex":"女子","draw":30,"place":"準優勝","pid":"P0014","status":"承認済","submitted":"2025-12-16","note":""},{"id":"R0015","tid":"T0017","ev":"シングルス","cat":"ミドル","sex":"女子","draw":30,"place":"ベスト4","pid":"P0198","status":"承認済","submitted":"2025-12-16","note":""},{"id":"R0016","tid":"T0017","ev":"シングルス","cat":"ミドル","sex":"女子","draw":30,"place":"ベスト4","pid":"P0146","status":"承認済","submitted":"2025-12-16","note":""},{"id":"R0017","tid":"T0017","ev":"シングルス","cat":"シニア","sex":"男子","draw":27,"place":"優勝","pid":"P0097","status":"承認済","submitted":"2025-12-16","note":""},{"id":"R0018","tid":"T0017","ev":"シングルス","cat":"シニア","sex":"男子","draw":27,"place":"準優勝","pid":"P0139","status":"承認済","submitted":"2025-12-16","note":""},{"id":"R0019","tid":"T0017","ev":"シングルス","cat":"シニア","sex":"男子","draw":27,"place":"ベスト4","pid":"P0053","status":"承認済","submitted":"2025-12-16","note":""},{"id":"R0020","tid":"T0017","ev":"シングルス","cat":"シニア","sex":"男子","draw":27,"place":"ベスト4","pid":"P0065","status":"承認済","submitted":"2025-12-16","note":""},{"id":"R0021","tid":"T0017","ev":"シングルス","cat":"シニア","sex":"女子","draw":30,"place":"優勝","pid":"P0102","status":"承認済","submitted":"2025-12-16","note":""},{"id":"R0022","tid":"T0017","ev":"シングルス","cat":"シニア","sex":"女子","draw":30,"place":"準優勝","pid":"P0052","status":"承認済","submitted":"2025-12-16","note":""},{"id":"R0023","tid":"T0017","ev":"シングルス","cat":"シニア","sex":"女子","draw":30,"place":"ベスト4","pid":"P0228","status":"承認済","submitted":"2025-12-16","note":""},{"id":"R0024","tid":"T0017","ev":"シングルス","cat":"シニア","sex":"女子","draw":30,"place":"ベスト4","pid":"P0112","status":"承認済","submitted":"2025-12-16","note":""},{"id":"R0025","tid":"T0017","ev":"ダブルス","cat":"フリー","sex":"男子","draw":30,"place":"優勝","pid":"P0207","status":"承認済","submitted":"2025-12-16","note":""},{"id":"R0026","tid":"T0017","ev":"ダブルス","cat":"フリー","sex":"男子","draw":30,"place":"準優勝","pid":"P0177","status":"承認済","submitted":"2025-12-16","note":""},{"id":"R0027","tid":"T0017","ev":"ダブルス","cat":"フリー","sex":"男子","draw":30,"place":"ベスト4","pid":"P0103","status":"承認済","submitted":"2025-12-16","note":""},{"id":"R0028","tid":"T0017","ev":"ダブルス","cat":"フリー","sex":"男子","draw":30,"place":"ベスト4","pid":"P0253","status":"承認済","submitted":"2025-12-16","note":""},{"id":"R0029","tid":"T0017","ev":"ダブルス","cat":"フリー","sex":"女子","draw":30,"place":"優勝","pid":"P0016","status":"承認済","submitted":"2025-12-16","note":""},{"id":"R0030","tid":"T0017","ev":"ダブルス","cat":"フリー","sex":"女子","draw":30,"place":"準優勝","pid":"P0226","status":"承認済","submitted":"2025-12-16","note":""},{"id":"R0031","tid":"T0017","ev":"ダブルス","cat":"フリー","sex":"女子","draw":30,"place":"ベスト4","pid":"P0046","status":"承認済","submitted":"2025-12-16","note":""},{"id":"R0032","tid":"T0017","ev":"ダブルス","cat":"フリー","sex":"女子","draw":30,"place":"ベスト4","pid":"P0222","status":"承認済","submitted":"2025-12-16","note":""},{"id":"R0033","tid":"T0017","ev":"ダブルス","cat":"ミドル","sex":"男子","draw":30,"place":"優勝","pid":"P0053","status":"承認済","submitted":"2025-12-16","note":""},{"id":"R0034","tid":"T0017","ev":"ダブルス","cat":"ミドル","sex":"男子","draw":30,"place":"準優勝","pid":"P0233","status":"承認済","submitted":"2025-12-16","note":""},{"id":"R0035","tid":"T0017","ev":"ダブルス","cat":"ミドル","sex":"男子","draw":30,"place":"ベスト4","pid":"P0241","status":"承認済","submitted":"2025-12-16","note":""},{"id":"R0036","tid":"T0017","ev":"ダブルス","cat":"ミドル","sex":"男子","draw":30,"place":"ベスト4","pid":"P0057","status":"承認済","submitted":"2025-12-16","note":""},{"id":"R0037","tid":"T0017","ev":"ダブルス","cat":"ミドル","sex":"女子","draw":30,"place":"優勝","pid":"P0108","status":"承認済","submitted":"2025-12-16","note":""},{"id":"R0038","tid":"T0017","ev":"ダブルス","cat":"ミドル","sex":"女子","draw":30,"place":"準優勝","pid":"P0246","status":"承認済","submitted":"2025-12-16","note":""},{"id":"R0039","tid":"T0017","ev":"ダブルス","cat":"ミドル","sex":"女子","draw":30,"place":"ベスト4","pid":"P0052","status":"承認済","submitted":"2025-12-16","note":""},{"id":"R0040","tid":"T0017","ev":"ダブルス","cat":"ミドル","sex":"女子","draw":30,"place":"ベスト4","pid":"P0222","status":"承認済","submitted":"2025-12-16","note":""},{"id":"R0041","tid":"T0017","ev":"ダブルス","cat":"シニア","sex":"男子","draw":27,"place":"優勝","pid":"P0253","status":"承認済","submitted":"2025-12-16","note":""},{"id":"R0042","tid":"T0017","ev":"ダブルス","cat":"シニア","sex":"男子","draw":27,"place":"準優勝","pid":"P0097","status":"承認済","submitted":"2025-12-16","note":""},{"id":"R0043","tid":"T0017","ev":"ダブルス","cat":"シニア","sex":"男子","draw":27,"place":"ベスト4","pid":"P0151","status":"承認済","submitted":"2025-12-16","note":""},{"id":"R0044","tid":"T0017","ev":"ダブルス","cat":"シニア","sex":"男子","draw":27,"place":"ベスト4","pid":"P0063","status":"承認済","submitted":"2025-12-16","note":""},{"id":"R0045","tid":"T0017","ev":"ダブルス","cat":"シニア","sex":"女子","draw":30,"place":"優勝","pid":"P0134","status":"承認済","submitted":"2025-12-16","note":""},{"id":"R0046","tid":"T0017","ev":"ダブルス","cat":"シニア","sex":"女子","draw":30,"place":"準優勝","pid":"P0198","status":"承認済","submitted":"2025-12-16","note":""},{"id":"R0047","tid":"T0017","ev":"ダブルス","cat":"シニア","sex":"女子","draw":30,"place":"ベスト4","pid":"P0246","status":"承認済","submitted":"2025-12-16","note":""},{"id":"R0048","tid":"T0017","ev":"ダブルス","cat":"シニア","sex":"女子","draw":30,"place":"ベスト4","pid":"P0086","status":"承認済","submitted":"2025-12-16","note":""},{"id":"R0049","tid":"T0017","ev":"ミックスダブルス","cat":"フリー","sex":"混合","draw":30,"place":"優勝","pid":"P0072","status":"承認済","submitted":"2025-12-16","note":""},{"id":"R0050","tid":"T0017","ev":"ミックスダブルス","cat":"フリー","sex":"混合","draw":30,"place":"準優勝","pid":"P0216","status":"承認済","submitted":"2025-12-16","note":""},{"id":"R0051","tid":"T0017","ev":"ミックスダブルス","cat":"フリー","sex":"混合","draw":30,"place":"ベスト4","pid":"P0031","status":"承認済","submitted":"2025-12-16","note":""},{"id":"R0052","tid":"T0017","ev":"ミックスダブルス","cat":"フリー","sex":"混合","draw":30,"place":"ベスト4","pid":"P0027","status":"承認済","submitted":"2025-12-16","note":""},{"id":"R0053","tid":"T0017","ev":"ミックスダブルス","cat":"ミドル","sex":"混合","draw":30,"place":"優勝","pid":"P0246","status":"承認済","submitted":"2025-12-16","note":""},{"id":"R0054","tid":"T0017","ev":"ミックスダブルス","cat":"ミドル","sex":"混合","draw":30,"place":"準優勝","pid":"P0134","status":"承認済","submitted":"2025-12-16","note":""},{"id":"R0055","tid":"T0017","ev":"ミックスダブルス","cat":"ミドル","sex":"混合","draw":30,"place":"ベスト4","pid":"P0047","status":"承認済","submitted":"2025-12-16","note":""},{"id":"R0056","tid":"T0017","ev":"ミックスダブルス","cat":"ミドル","sex":"混合","draw":30,"place":"ベスト4","pid":"P0222","status":"承認済","submitted":"2025-12-16","note":""},{"id":"R0057","tid":"T0017","ev":"ミックスダブルス","cat":"シニア","sex":"混合","draw":30,"place":"優勝","pid":"P0240","status":"承認済","submitted":"2025-12-16","note":""},{"id":"R0058","tid":"T0017","ev":"ミックスダブルス","cat":"シニア","sex":"混合","draw":30,"place":"準優勝","pid":"P0206","status":"承認済","submitted":"2025-12-16","note":""},{"id":"R0059","tid":"T0017","ev":"ミックスダブルス","cat":"シニア","sex":"混合","draw":30,"place":"ベスト4","pid":"P0134","status":"承認済","submitted":"2025-12-16","note":""},{"id":"R0060","tid":"T0017","ev":"ミックスダブルス","cat":"シニア","sex":"混合","draw":30,"place":"ベスト4","pid":"P0139","status":"承認済","submitted":"2025-12-16","note":""},{"id":"R0061","tid":"T0022","ev":"シングルス","cat":"フリー","sex":"男子","draw":18,"place":"優勝","pid":"P0207","status":"承認待ち","submitted":"2026-08-13","note":""},{"id":"R0062","tid":"T0022","ev":"シングルス","cat":"フリー","sex":"男子","draw":18,"place":"準優勝","pid":"P0119","status":"承認待ち","submitted":"2026-08-13","note":""},{"id":"R0063","tid":"T0022","ev":"シングルス","cat":"フリー","sex":"男子","draw":18,"place":"ベスト4","pid":"P0253","status":"承認待ち","submitted":"2026-08-13","note":""},{"id":"R0064","tid":"T0022","ev":"シングルス","cat":"フリー","sex":"男子","draw":18,"place":"ベスト4","pid":"P0151","status":"承認待ち","submitted":"2026-08-13","note":""},{"id":"R0065","tid":"T0022","ev":"シングルス","cat":"フリー","sex":"女子","draw":18,"place":"優勝","pid":"P0100","status":"承認待ち","submitted":"2026-08-13","note":""},{"id":"R0066","tid":"T0022","ev":"シングルス","cat":"フリー","sex":"女子","draw":18,"place":"準優勝","pid":"P0044","status":"承認待ち","submitted":"2026-08-13","note":""},{"id":"R0067","tid":"T0022","ev":"シングルス","cat":"フリー","sex":"女子","draw":18,"place":"ベスト4","pid":"P0138","status":"承認待ち","submitted":"2026-08-13","note":""},{"id":"R0068","tid":"T0022","ev":"シングルス","cat":"フリー","sex":"女子","draw":18,"place":"ベスト4","pid":"P0052","status":"承認待ち","submitted":"2026-08-13","note":""},{"id":"R0069","tid":"T0022","ev":"シングルス","cat":"ミドル","sex":"男子","draw":13,"place":"優勝","pid":"P0151","status":"承認待ち","submitted":"2026-08-13","note":""},{"id":"R0070","tid":"T0022","ev":"シングルス","cat":"ミドル","sex":"男子","draw":13,"place":"準優勝","pid":"P0255","status":"承認待ち","submitted":"2026-08-13","note":""},{"id":"R0071","tid":"T0022","ev":"シングルス","cat":"ミドル","sex":"男子","draw":13,"place":"ベスト4","pid":"P0119","status":"承認待ち","submitted":"2026-08-13","note":""},{"id":"R0072","tid":"T0022","ev":"シングルス","cat":"ミドル","sex":"男子","draw":13,"place":"ベスト4","pid":"P0253","status":"承認待ち","submitted":"2026-08-13","note":""},{"id":"R0073","tid":"T0022","ev":"シングルス","cat":"ミドル","sex":"女子","draw":24,"place":"優勝","pid":"P0208","status":"要確認","submitted":"2026-08-13","note":"選手ID未記入 2件"},{"id":"R0074","tid":"T0022","ev":"シングルス","cat":"ミドル","sex":"女子","draw":24,"place":"準優勝","pid":"P0132","status":"要確認","submitted":"2026-08-13","note":"選手ID未記入 2件"},{"id":"R0075","tid":"T0022","ev":"シングルス","cat":"ミドル","sex":"女子","draw":24,"place":"ベスト4","pid":"P0236","status":"要確認","submitted":"2026-08-13","note":"選手ID未記入 2件"},{"id":"R0076","tid":"T0022","ev":"シングルス","cat":"ミドル","sex":"女子","draw":24,"place":"ベスト4","pid":"P0102","status":"要確認","submitted":"2026-08-13","note":"選手ID未記入 2件"},{"id":"R0077","tid":"T0022","ev":"ダブルス","cat":"フリー","sex":"男子","draw":18,"place":"優勝","pid":"P0207","status":"承認済","submitted":"2026-08-13","note":""},{"id":"R0078","tid":"T0022","ev":"ダブルス","cat":"フリー","sex":"男子","draw":18,"place":"準優勝","pid":"P0159","status":"承認済","submitted":"2026-08-13","note":""},{"id":"R0079","tid":"T0022","ev":"ダブルス","cat":"フリー","sex":"男子","draw":18,"place":"ベスト4","pid":"P0019","status":"承認済","submitted":"2026-08-13","note":""},{"id":"R0080","tid":"T0022","ev":"ダブルス","cat":"フリー","sex":"男子","draw":18,"place":"ベスト4","pid":"P0119","status":"承認済","submitted":"2026-08-13","note":""},{"id":"R0081","tid":"T0022","ev":"ダブルス","cat":"フリー","sex":"女子","draw":18,"place":"優勝","pid":"P0246","status":"承認済","submitted":"2026-08-13","note":""},{"id":"R0082","tid":"T0022","ev":"ダブルス","cat":"フリー","sex":"女子","draw":18,"place":"準優勝","pid":"P0100","status":"承認済","submitted":"2026-08-13","note":""},{"id":"R0083","tid":"T0022","ev":"ダブルス","cat":"フリー","sex":"女子","draw":18,"place":"ベスト4","pid":"P0044","status":"承認済","submitted":"2026-08-13","note":""},{"id":"R0084","tid":"T0022","ev":"ダブルス","cat":"フリー","sex":"女子","draw":18,"place":"ベスト4","pid":"P0138","status":"承認済","submitted":"2026-08-13","note":""},{"id":"R0085","tid":"T0022","ev":"ダブルス","cat":"ミドル","sex":"男子","draw":13,"place":"優勝","pid":"P0255","status":"承認済","submitted":"2026-08-13","note":""},{"id":"R0086","tid":"T0022","ev":"ダブルス","cat":"ミドル","sex":"男子","draw":13,"place":"準優勝","pid":"P0253","status":"承認済","submitted":"2026-08-13","note":""},{"id":"R0087","tid":"T0022","ev":"ダブルス","cat":"ミドル","sex":"男子","draw":13,"place":"ベスト4","pid":"P0119","status":"承認済","submitted":"2026-08-13","note":""},{"id":"R0088","tid":"T0022","ev":"ダブルス","cat":"ミドル","sex":"男子","draw":13,"place":"ベスト4","pid":"P0151","status":"承認済","submitted":"2026-08-13","note":""},{"id":"R0089","tid":"T0022","ev":"ダブルス","cat":"ミドル","sex":"女子","draw":24,"place":"優勝","pid":"P0146","status":"承認済","submitted":"2026-08-13","note":""},{"id":"R0090","tid":"T0022","ev":"ダブルス","cat":"ミドル","sex":"女子","draw":24,"place":"準優勝","pid":"P0052","status":"承認済","submitted":"2026-08-13","note":""},{"id":"R0091","tid":"T0022","ev":"ダブルス","cat":"ミドル","sex":"女子","draw":24,"place":"ベスト4","pid":"P0130","status":"承認済","submitted":"2026-08-13","note":""},{"id":"R0092","tid":"T0022","ev":"ダブルス","cat":"ミドル","sex":"女子","draw":24,"place":"ベスト4","pid":"P0006","status":"承認済","submitted":"2026-08-13","note":""},{"id":"R0093","tid":"T0029","ev":"シングルス","cat":"フリー","sex":"男子","draw":22,"place":"優勝","pid":"P0083","status":"承認済","submitted":"2025-12-20","note":""},{"id":"R0094","tid":"T0029","ev":"シングルス","cat":"フリー","sex":"男子","draw":22,"place":"準優勝","pid":"P0223","status":"承認済","submitted":"2025-12-20","note":""},{"id":"R0095","tid":"T0029","ev":"シングルス","cat":"フリー","sex":"男子","draw":22,"place":"ベスト4","pid":"P0047","status":"承認済","submitted":"2025-12-20","note":""},{"id":"R0096","tid":"T0029","ev":"シングルス","cat":"フリー","sex":"男子","draw":22,"place":"ベスト4","pid":"P0021","status":"承認済","submitted":"2025-12-20","note":""},{"id":"R0097","tid":"T0029","ev":"シングルス","cat":"フリー","sex":"女子","draw":16,"place":"優勝","pid":"P0078","status":"承認済","submitted":"2025-12-20","note":""},{"id":"R0098","tid":"T0029","ev":"シングルス","cat":"フリー","sex":"女子","draw":16,"place":"準優勝","pid":"P0150","status":"承認済","submitted":"2025-12-20","note":""},{"id":"R0099","tid":"T0029","ev":"シングルス","cat":"フリー","sex":"女子","draw":16,"place":"ベスト4","pid":"P0118","status":"承認済","submitted":"2025-12-20","note":""},{"id":"R0100","tid":"T0029","ev":"シングルス","cat":"フリー","sex":"女子","draw":16,"place":"ベスト4","pid":"P0254","status":"承認済","submitted":"2025-12-20","note":""},{"id":"R0101","tid":"T0029","ev":"シングルス","cat":"ミドル","sex":"男子","draw":16,"place":"優勝","pid":"P0125","status":"承認済","submitted":"2025-12-20","note":""},{"id":"R0102","tid":"T0029","ev":"シングルス","cat":"ミドル","sex":"男子","draw":16,"place":"準優勝","pid":"P0175","status":"承認済","submitted":"2025-12-20","note":""},{"id":"R0103","tid":"T0029","ev":"シングルス","cat":"ミドル","sex":"男子","draw":16,"place":"ベスト4","pid":"P0021","status":"承認済","submitted":"2025-12-20","note":""},{"id":"R0104","tid":"T0029","ev":"シングルス","cat":"ミドル","sex":"男子","draw":16,"place":"ベスト4","pid":"P0211","status":"承認済","submitted":"2025-12-20","note":""},{"id":"R0105","tid":"T0029","ev":"シングルス","cat":"ミドル","sex":"女子","draw":24,"place":"優勝","pid":"P0134","status":"承認済","submitted":"2025-12-20","note":""},{"id":"R0106","tid":"T0029","ev":"シングルス","cat":"ミドル","sex":"女子","draw":24,"place":"準優勝","pid":"P0210","status":"承認済","submitted":"2025-12-20","note":""},{"id":"R0107","tid":"T0029","ev":"シングルス","cat":"ミドル","sex":"女子","draw":24,"place":"ベスト4","pid":"P0208","status":"承認済","submitted":"2025-12-20","note":""},{"id":"R0108","tid":"T0029","ev":"シングルス","cat":"ミドル","sex":"女子","draw":24,"place":"ベスト4","pid":"P0230","status":"承認済","submitted":"2025-12-20","note":""},{"id":"R0109","tid":"T0029","ev":"シングルス","cat":"シニア","sex":"男子","draw":24,"place":"優勝","pid":"P0119","status":"承認済","submitted":"2025-12-20","note":""},{"id":"R0110","tid":"T0029","ev":"シングルス","cat":"シニア","sex":"男子","draw":24,"place":"準優勝","pid":"P0053","status":"承認済","submitted":"2025-12-20","note":""},{"id":"R0111","tid":"T0029","ev":"シングルス","cat":"シニア","sex":"男子","draw":24,"place":"ベスト4","pid":"P0217","status":"承認済","submitted":"2025-12-20","note":""},{"id":"R0112","tid":"T0029","ev":"シングルス","cat":"シニア","sex":"男子","draw":24,"place":"ベスト4","pid":"P0139","status":"承認済","submitted":"2025-12-20","note":""},{"id":"R0113","tid":"T0029","ev":"シングルス","cat":"シニア","sex":"女子","draw":24,"place":"優勝","pid":"P0198","status":"承認済","submitted":"2025-12-20","note":""},{"id":"R0114","tid":"T0029","ev":"シングルス","cat":"シニア","sex":"女子","draw":24,"place":"準優勝","pid":"P0206","status":"承認済","submitted":"2025-12-20","note":""},{"id":"R0115","tid":"T0029","ev":"シングルス","cat":"シニア","sex":"女子","draw":24,"place":"ベスト4","pid":"P0202","status":"承認済","submitted":"2025-12-20","note":""},{"id":"R0116","tid":"T0029","ev":"シングルス","cat":"シニア","sex":"女子","draw":24,"place":"ベスト4","pid":"P0054","status":"承認済","submitted":"2025-12-20","note":""},{"id":"R0117","tid":"T0029","ev":"ダブルス","cat":"フリー","sex":"男子","draw":22,"place":"優勝","pid":"P0083","status":"承認済","submitted":"2025-12-20","note":""},{"id":"R0118","tid":"T0029","ev":"ダブルス","cat":"フリー","sex":"男子","draw":22,"place":"準優勝","pid":"P0223","status":"承認済","submitted":"2025-12-20","note":""},{"id":"R0119","tid":"T0029","ev":"ダブルス","cat":"フリー","sex":"男子","draw":22,"place":"ベスト4","pid":"P0047","status":"承認済","submitted":"2025-12-20","note":""},{"id":"R0120","tid":"T0029","ev":"ダブルス","cat":"フリー","sex":"男子","draw":22,"place":"ベスト4","pid":"P0227","status":"承認済","submitted":"2025-12-20","note":""},{"id":"R0121","tid":"T0029","ev":"ダブルス","cat":"フリー","sex":"女子","draw":16,"place":"優勝","pid":"P0130","status":"承認済","submitted":"2025-12-20","note":""},{"id":"R0122","tid":"T0029","ev":"ダブルス","cat":"フリー","sex":"女子","draw":16,"place":"準優勝","pid":"P0254","status":"承認済","submitted":"2025-12-20","note":""},{"id":"R0123","tid":"T0029","ev":"ダブルス","cat":"フリー","sex":"女子","draw":16,"place":"ベスト4","pid":"P0118","status":"承認済","submitted":"2025-12-20","note":""},{"id":"R0124","tid":"T0029","ev":"ダブルス","cat":"フリー","sex":"女子","draw":16,"place":"ベスト4","pid":"P0162","status":"承認済","submitted":"2025-12-20","note":""},{"id":"R0125","tid":"T0029","ev":"ダブルス","cat":"ミドル","sex":"男子","draw":16,"place":"優勝","pid":"P0227","status":"承認済","submitted":"2025-12-20","note":""},{"id":"R0126","tid":"T0029","ev":"ダブルス","cat":"ミドル","sex":"男子","draw":16,"place":"準優勝","pid":"P0175","status":"承認済","submitted":"2025-12-20","note":""},{"id":"R0127","tid":"T0029","ev":"ダブルス","cat":"ミドル","sex":"男子","draw":16,"place":"ベスト4","pid":"P0047","status":"承認済","submitted":"2025-12-20","note":""},{"id":"R0128","tid":"T0029","ev":"ダブルス","cat":"ミドル","sex":"男子","draw":16,"place":"ベスト4","pid":"P0125","status":"承認済","submitted":"2025-12-20","note":""},{"id":"R0129","tid":"T0029","ev":"ダブルス","cat":"ミドル","sex":"女子","draw":24,"place":"優勝","pid":"P0102","status":"承認済","submitted":"2025-12-20","note":""},{"id":"R0130","tid":"T0029","ev":"ダブルス","cat":"ミドル","sex":"女子","draw":24,"place":"準優勝","pid":"P0202","status":"承認済","submitted":"2025-12-20","note":""},{"id":"R0131","tid":"T0029","ev":"ダブルス","cat":"ミドル","sex":"女子","draw":24,"place":"ベスト4","pid":"P0086","status":"承認済","submitted":"2025-12-20","note":""},{"id":"R0132","tid":"T0029","ev":"ダブルス","cat":"ミドル","sex":"女子","draw":24,"place":"ベスト4","pid":"P0052","status":"承認済","submitted":"2025-12-20","note":""},{"id":"R0133","tid":"T0029","ev":"ダブルス","cat":"シニア","sex":"男子","draw":24,"place":"優勝","pid":"P0139","status":"承認済","submitted":"2025-12-20","note":""},{"id":"R0134","tid":"T0029","ev":"ダブルス","cat":"シニア","sex":"男子","draw":24,"place":"準優勝","pid":"P0097","status":"承認済","submitted":"2025-12-20","note":""},{"id":"R0135","tid":"T0029","ev":"ダブルス","cat":"シニア","sex":"男子","draw":24,"place":"ベスト4","pid":"P0253","status":"承認済","submitted":"2025-12-20","note":""},{"id":"R0136","tid":"T0029","ev":"ダブルス","cat":"シニア","sex":"男子","draw":24,"place":"ベスト4","pid":"P0151","status":"承認済","submitted":"2025-12-20","note":""},{"id":"R0137","tid":"T0029","ev":"ダブルス","cat":"シニア","sex":"女子","draw":24,"place":"優勝","pid":"P0052","status":"承認済","submitted":"2025-12-20","note":""},{"id":"R0138","tid":"T0029","ev":"ダブルス","cat":"シニア","sex":"女子","draw":24,"place":"準優勝","pid":"P0206","status":"承認済","submitted":"2025-12-20","note":""},{"id":"R0139","tid":"T0029","ev":"ダブルス","cat":"シニア","sex":"女子","draw":24,"place":"ベスト4","pid":"P0198","status":"承認済","submitted":"2025-12-20","note":""},{"id":"R0140","tid":"T0029","ev":"ダブルス","cat":"シニア","sex":"女子","draw":24,"place":"ベスト4","pid":"P0210","status":"承認済","submitted":"2025-12-20","note":""},{"id":"R0141","tid":"T0039","ev":"シングルス","cat":"フリー","sex":"男子","draw":15,"place":"優勝","pid":"P0027","status":"承認済","submitted":"2025-12-13","note":""},{"id":"R0142","tid":"T0039","ev":"シングルス","cat":"フリー","sex":"男子","draw":15,"place":"準優勝","pid":"P0011","status":"承認済","submitted":"2025-12-13","note":""},{"id":"R0143","tid":"T0039","ev":"シングルス","cat":"フリー","sex":"男子","draw":15,"place":"ベスト4","pid":"P0131","status":"承認済","submitted":"2025-12-13","note":""},{"id":"R0144","tid":"T0039","ev":"シングルス","cat":"フリー","sex":"男子","draw":15,"place":"ベスト4","pid":"P0155","status":"承認済","submitted":"2025-12-13","note":""},{"id":"R0145","tid":"T0039","ev":"シングルス","cat":"フリー","sex":"女子","draw":21,"place":"優勝","pid":"P0226","status":"承認済","submitted":"2025-12-13","note":""},{"id":"R0146","tid":"T0039","ev":"シングルス","cat":"フリー","sex":"女子","draw":21,"place":"準優勝","pid":"P0198","status":"承認済","submitted":"2025-12-13","note":""},{"id":"R0147","tid":"T0039","ev":"シングルス","cat":"フリー","sex":"女子","draw":21,"place":"ベスト4","pid":"P0158","status":"承認済","submitted":"2025-12-13","note":""},{"id":"R0148","tid":"T0039","ev":"シングルス","cat":"フリー","sex":"女子","draw":21,"place":"ベスト4","pid":"P0134","status":"承認済","submitted":"2025-12-13","note":""},{"id":"R0149","tid":"T0039","ev":"シングルス","cat":"ミドル","sex":"男子","draw":24,"place":"優勝","pid":"P0169","status":"承認済","submitted":"2025-12-13","note":""},{"id":"R0150","tid":"T0039","ev":"シングルス","cat":"ミドル","sex":"男子","draw":24,"place":"準優勝","pid":"P0127","status":"承認済","submitted":"2025-12-13","note":""},{"id":"R0151","tid":"T0039","ev":"シングルス","cat":"ミドル","sex":"男子","draw":24,"place":"ベスト4","pid":"P0053","status":"承認済","submitted":"2025-12-13","note":""},{"id":"R0152","tid":"T0039","ev":"シングルス","cat":"ミドル","sex":"男子","draw":24,"place":"ベスト4","pid":"P0175","status":"承認済","submitted":"2025-12-13","note":""},{"id":"R0153","tid":"T0039","ev":"シングルス","cat":"ミドル","sex":"女子","draw":15,"place":"優勝","pid":"P0198","status":"承認済","submitted":"2025-12-13","note":""},{"id":"R0154","tid":"T0039","ev":"シングルス","cat":"ミドル","sex":"女子","draw":15,"place":"準優勝","pid":"P0222","status":"承認済","submitted":"2025-12-13","note":""},{"id":"R0155","tid":"T0039","ev":"シングルス","cat":"ミドル","sex":"女子","draw":15,"place":"ベスト4","pid":"P0134","status":"承認済","submitted":"2025-12-13","note":""},{"id":"R0156","tid":"T0039","ev":"シングルス","cat":"ミドル","sex":"女子","draw":15,"place":"ベスト4","pid":"P0236","status":"承認済","submitted":"2025-12-13","note":""},{"id":"R0157","tid":"T0039","ev":"ダブルス","cat":"フリー","sex":"男子","draw":15,"place":"優勝","pid":"P0027","status":"承認済","submitted":"2025-12-13","note":""},{"id":"R0158","tid":"T0039","ev":"ダブルス","cat":"フリー","sex":"男子","draw":15,"place":"準優勝","pid":"P0155","status":"承認済","submitted":"2025-12-13","note":""},{"id":"R0159","tid":"T0039","ev":"ダブルス","cat":"フリー","sex":"男子","draw":15,"place":"ベスト4","pid":"P0131","status":"承認済","submitted":"2025-12-13","note":""},{"id":"R0160","tid":"T0039","ev":"ダブルス","cat":"フリー","sex":"男子","draw":15,"place":"ベスト4","pid":"P0011","status":"承認済","submitted":"2025-12-13","note":""},{"id":"R0161","tid":"T0039","ev":"ダブルス","cat":"フリー","sex":"女子","draw":21,"place":"優勝","pid":"P0212","status":"承認済","submitted":"2025-12-13","note":""},{"id":"R0162","tid":"T0039","ev":"ダブルス","cat":"フリー","sex":"女子","draw":21,"place":"準優勝","pid":"P0156","status":"承認済","submitted":"2025-12-13","note":""},{"id":"R0163","tid":"T0039","ev":"ダブルス","cat":"フリー","sex":"女子","draw":21,"place":"ベスト4","pid":"P0226","status":"承認済","submitted":"2025-12-13","note":""},{"id":"R0164","tid":"T0039","ev":"ダブルス","cat":"フリー","sex":"女子","draw":21,"place":"ベスト4","pid":"P0198","status":"承認済","submitted":"2025-12-13","note":""},{"id":"R0165","tid":"T0039","ev":"ダブルス","cat":"ミドル","sex":"男子","draw":24,"place":"優勝","pid":"P0257","status":"承認済","submitted":"2025-12-13","note":""},{"id":"R0166","tid":"T0039","ev":"ダブルス","cat":"ミドル","sex":"男子","draw":24,"place":"準優勝","pid":"P0253","status":"承認済","submitted":"2025-12-13","note":""},{"id":"R0167","tid":"T0039","ev":"ダブルス","cat":"ミドル","sex":"男子","draw":24,"place":"ベスト4","pid":"P0063","status":"承認済","submitted":"2025-12-13","note":""},{"id":"R0168","tid":"T0039","ev":"ダブルス","cat":"ミドル","sex":"男子","draw":24,"place":"ベスト4","pid":"P0127","status":"承認済","submitted":"2025-12-13","note":""},{"id":"R0169","tid":"T0039","ev":"ダブルス","cat":"ミドル","sex":"女子","draw":15,"place":"優勝","pid":"P0040","status":"承認済","submitted":"2025-12-13","note":""},{"id":"R0170","tid":"T0039","ev":"ダブルス","cat":"ミドル","sex":"女子","draw":15,"place":"準優勝","pid":"P0236","status":"承認済","submitted":"2025-12-13","note":""},{"id":"R0171","tid":"T0039","ev":"ダブルス","cat":"ミドル","sex":"女子","draw":15,"place":"ベスト4","pid":"P0134","status":"承認済","submitted":"2025-12-13","note":""},{"id":"R0172","tid":"T0039","ev":"ダブルス","cat":"ミドル","sex":"女子","draw":15,"place":"ベスト4","pid":"P0088","status":"承認済","submitted":"2025-12-13","note":""},{"id":"R0173","tid":"T0049","ev":"シングルス","cat":"フリー","sex":"男子","draw":24,"place":"優勝","pid":"P0137","status":"承認済","submitted":"2025-12-27","note":""},{"id":"R0174","tid":"T0049","ev":"シングルス","cat":"フリー","sex":"男子","draw":24,"place":"準優勝","pid":"P0099","status":"承認済","submitted":"2025-12-27","note":""},{"id":"R0175","tid":"T0049","ev":"シングルス","cat":"フリー","sex":"男子","draw":24,"place":"ベスト4","pid":"P0033","status":"承認済","submitted":"2025-12-27","note":""},{"id":"R0176","tid":"T0049","ev":"シングルス","cat":"フリー","sex":"男子","draw":24,"place":"ベスト4","pid":"P0209","status":"承認済","submitted":"2025-12-27","note":""},{"id":"R0177","tid":"T0049","ev":"シングルス","cat":"フリー","sex":"女子","draw":19,"place":"優勝","pid":"P0206","status":"承認済","submitted":"2025-12-27","note":""},{"id":"R0178","tid":"T0049","ev":"シングルス","cat":"フリー","sex":"女子","draw":19,"place":"準優勝","pid":"P0018","status":"承認済","submitted":"2025-12-27","note":""},{"id":"R0179","tid":"T0049","ev":"シングルス","cat":"フリー","sex":"女子","draw":19,"place":"ベスト4","pid":"P0058","status":"承認済","submitted":"2025-12-27","note":""},{"id":"R0180","tid":"T0049","ev":"シングルス","cat":"フリー","sex":"女子","draw":19,"place":"ベスト4","pid":"P0046","status":"承認済","submitted":"2025-12-27","note":""},{"id":"R0181","tid":"T0049","ev":"シングルス","cat":"ミドル","sex":"男子","draw":14,"place":"優勝","pid":"P0233","status":"承認済","submitted":"2025-12-27","note":""},{"id":"R0182","tid":"T0049","ev":"シングルス","cat":"ミドル","sex":"男子","draw":14,"place":"準優勝","pid":"P0113","status":"承認済","submitted":"2025-12-27","note":""},{"id":"R0183","tid":"T0049","ev":"シングルス","cat":"ミドル","sex":"男子","draw":14,"place":"ベスト4","pid":"P0247","status":"承認済","submitted":"2025-12-27","note":""},{"id":"R0184","tid":"T0049","ev":"シングルス","cat":"ミドル","sex":"男子","draw":14,"place":"ベスト4","pid":"P0063","status":"承認済","submitted":"2025-12-27","note":""},{"id":"R0185","tid":"T0049","ev":"シングルス","cat":"ミドル","sex":"女子","draw":24,"place":"優勝","pid":"P0198","status":"承認済","submitted":"2025-12-27","note":""},{"id":"R0186","tid":"T0049","ev":"シングルス","cat":"ミドル","sex":"女子","draw":24,"place":"準優勝","pid":"P0236","status":"承認済","submitted":"2025-12-27","note":""},{"id":"R0187","tid":"T0049","ev":"シングルス","cat":"ミドル","sex":"女子","draw":24,"place":"ベスト4","pid":"P0244","status":"承認済","submitted":"2025-12-27","note":""},{"id":"R0188","tid":"T0049","ev":"シングルス","cat":"ミドル","sex":"女子","draw":24,"place":"ベスト4","pid":"P0102","status":"承認済","submitted":"2025-12-27","note":""},{"id":"R0189","tid":"T0049","ev":"シングルス","cat":"シニア","sex":"男子","draw":24,"place":"優勝","pid":"P0203","status":"承認済","submitted":"2025-12-27","note":""},{"id":"R0190","tid":"T0049","ev":"シングルス","cat":"シニア","sex":"男子","draw":24,"place":"準優勝","pid":"P0119","status":"承認済","submitted":"2025-12-27","note":""},{"id":"R0191","tid":"T0049","ev":"シングルス","cat":"シニア","sex":"男子","draw":24,"place":"ベスト4","pid":"P0255","status":"承認済","submitted":"2025-12-27","note":""},{"id":"R0192","tid":"T0049","ev":"シングルス","cat":"シニア","sex":"男子","draw":24,"place":"ベスト4","pid":"P0053","status":"承認済","submitted":"2025-12-27","note":""},{"id":"R0193","tid":"T0049","ev":"シングルス","cat":"シニア","sex":"女子","draw":24,"place":"優勝","pid":"P0102","status":"承認済","submitted":"2025-12-27","note":""},{"id":"R0194","tid":"T0049","ev":"シングルス","cat":"シニア","sex":"女子","draw":24,"place":"準優勝","pid":"P0052","status":"承認済","submitted":"2025-12-27","note":""},{"id":"R0195","tid":"T0049","ev":"シングルス","cat":"シニア","sex":"女子","draw":24,"place":"ベスト4","pid":"P0202","status":"承認済","submitted":"2025-12-27","note":""},{"id":"R0196","tid":"T0049","ev":"シングルス","cat":"シニア","sex":"女子","draw":24,"place":"ベスト4","pid":"P0206","status":"承認済","submitted":"2025-12-27","note":""},{"id":"R0197","tid":"T0049","ev":"ダブルス","cat":"フリー","sex":"男子","draw":24,"place":"優勝","pid":"P0137","status":"承認済","submitted":"2025-12-27","note":""},{"id":"R0198","tid":"T0049","ev":"ダブルス","cat":"フリー","sex":"男子","draw":24,"place":"準優勝","pid":"P0233","status":"承認済","submitted":"2025-12-27","note":""},{"id":"R0199","tid":"T0049","ev":"ダブルス","cat":"フリー","sex":"男子","draw":24,"place":"ベスト4","pid":"P0043","status":"承認済","submitted":"2025-12-27","note":""},{"id":"R0200","tid":"T0049","ev":"ダブルス","cat":"フリー","sex":"男子","draw":24,"place":"ベスト4","pid":"P0039","status":"承認済","submitted":"2025-12-27","note":""},{"id":"R0201","tid":"T0049","ev":"ダブルス","cat":"フリー","sex":"女子","draw":19,"place":"優勝","pid":"P0018","status":"承認済","submitted":"2025-12-27","note":""},{"id":"R0202","tid":"T0049","ev":"ダブルス","cat":"フリー","sex":"女子","draw":19,"place":"準優勝","pid":"P0216","status":"承認済","submitted":"2025-12-27","note":""},{"id":"R0203","tid":"T0049","ev":"ダブルス","cat":"フリー","sex":"女子","draw":19,"place":"ベスト4","pid":"P0058","status":"承認済","submitted":"2025-12-27","note":""},{"id":"R0204","tid":"T0049","ev":"ダブルス","cat":"フリー","sex":"女子","draw":19,"place":"ベスト4","pid":"P0206","status":"承認済","submitted":"2025-12-27","note":""},{"id":"R0205","tid":"T0049","ev":"ダブルス","cat":"ミドル","sex":"男子","draw":14,"place":"優勝","pid":"P0233","status":"承認済","submitted":"2025-12-27","note":""},{"id":"R0206","tid":"T0049","ev":"ダブルス","cat":"ミドル","sex":"男子","draw":14,"place":"準優勝","pid":"P0127","status":"承認済","submitted":"2025-12-27","note":""},{"id":"R0207","tid":"T0049","ev":"ダブルス","cat":"ミドル","sex":"男子","draw":14,"place":"ベスト4","pid":"P0169","status":"承認済","submitted":"2025-12-27","note":""},{"id":"R0208","tid":"T0049","ev":"ダブルス","cat":"ミドル","sex":"男子","draw":14,"place":"ベスト4","pid":"P0109","status":"承認済","submitted":"2025-12-27","note":""},{"id":"R0209","tid":"T0049","ev":"ダブルス","cat":"ミドル","sex":"女子","draw":24,"place":"優勝","pid":"P0210","status":"承認済","submitted":"2025-12-27","note":""},{"id":"R0210","tid":"T0049","ev":"ダブルス","cat":"ミドル","sex":"女子","draw":24,"place":"準優勝","pid":"P0134","status":"承認済","submitted":"2025-12-27","note":""},{"id":"R0211","tid":"T0049","ev":"ダブルス","cat":"ミドル","sex":"女子","draw":24,"place":"ベスト4","pid":"P0112","status":"承認済","submitted":"2025-12-27","note":""},{"id":"R0212","tid":"T0049","ev":"ダブルス","cat":"ミドル","sex":"女子","draw":24,"place":"ベスト4","pid":"P0198","status":"承認済","submitted":"2025-12-27","note":""},{"id":"R0213","tid":"T0049","ev":"ダブルス","cat":"シニア","sex":"男子","draw":24,"place":"優勝","pid":"P0053","status":"承認済","submitted":"2025-12-27","note":""},{"id":"R0214","tid":"T0049","ev":"ダブルス","cat":"シニア","sex":"男子","draw":24,"place":"準優勝","pid":"P0217","status":"承認済","submitted":"2025-12-27","note":""},{"id":"R0215","tid":"T0049","ev":"ダブルス","cat":"シニア","sex":"男子","draw":24,"place":"ベスト4","pid":"P0203","status":"承認済","submitted":"2025-12-27","note":""},{"id":"R0216","tid":"T0049","ev":"ダブルス","cat":"シニア","sex":"男子","draw":24,"place":"ベスト4","pid":"P0151","status":"承認済","submitted":"2025-12-27","note":""},{"id":"R0217","tid":"T0049","ev":"ダブルス","cat":"シニア","sex":"女子","draw":24,"place":"優勝","pid":"P0210","status":"承認済","submitted":"2025-12-27","note":""},{"id":"R0218","tid":"T0049","ev":"ダブルス","cat":"シニア","sex":"女子","draw":24,"place":"準優勝","pid":"P0236","status":"承認済","submitted":"2025-12-27","note":""},{"id":"R0219","tid":"T0049","ev":"ダブルス","cat":"シニア","sex":"女子","draw":24,"place":"ベスト4","pid":"P0246","status":"承認済","submitted":"2025-12-27","note":""},{"id":"R0220","tid":"T0049","ev":"ダブルス","cat":"シニア","sex":"女子","draw":24,"place":"ベスト4","pid":"P0134","status":"承認済","submitted":"2025-12-27","note":""},{"id":"R0221","tid":"T0052","ev":"シングルス","cat":"フリー","sex":"男子","draw":24,"place":"優勝","pid":"P0209","status":"承認済","submitted":"2026-08-13","note":""},{"id":"R0222","tid":"T0052","ev":"シングルス","cat":"フリー","sex":"男子","draw":24,"place":"準優勝","pid":"P0099","status":"承認済","submitted":"2026-08-13","note":""},{"id":"R0223","tid":"T0052","ev":"シングルス","cat":"フリー","sex":"男子","draw":24,"place":"ベスト4","pid":"P0127","status":"承認済","submitted":"2026-08-13","note":""},{"id":"R0224","tid":"T0052","ev":"シングルス","cat":"フリー","sex":"男子","draw":24,"place":"ベスト4","pid":"P0137","status":"承認済","submitted":"2026-08-13","note":""},{"id":"R0225","tid":"T0052","ev":"シングルス","cat":"フリー","sex":"女子","draw":21,"place":"優勝","pid":"P0046","status":"承認済","submitted":"2026-08-13","note":""},{"id":"R0226","tid":"T0052","ev":"シングルス","cat":"フリー","sex":"女子","draw":21,"place":"準優勝","pid":"P0216","status":"承認済","submitted":"2026-08-13","note":""},{"id":"R0227","tid":"T0052","ev":"シングルス","cat":"フリー","sex":"女子","draw":21,"place":"ベスト4","pid":"P0018","status":"承認済","submitted":"2026-08-13","note":""},{"id":"R0228","tid":"T0052","ev":"シングルス","cat":"フリー","sex":"女子","draw":21,"place":"ベスト4","pid":"P0206","status":"承認済","submitted":"2026-08-13","note":""},{"id":"R0229","tid":"T0052","ev":"シングルス","cat":"ミドル","sex":"男子","draw":15,"place":"優勝","pid":"P0169","status":"承認済","submitted":"2026-08-13","note":""},{"id":"R0230","tid":"T0052","ev":"シングルス","cat":"ミドル","sex":"男子","draw":15,"place":"準優勝","pid":"P0127","status":"承認済","submitted":"2026-08-13","note":""},{"id":"R0231","tid":"T0052","ev":"シングルス","cat":"ミドル","sex":"男子","draw":15,"place":"ベスト4","pid":"P0233","status":"承認済","submitted":"2026-08-13","note":""},{"id":"R0232","tid":"T0052","ev":"シングルス","cat":"ミドル","sex":"男子","draw":15,"place":"ベスト4","pid":"P0195","status":"承認済","submitted":"2026-08-13","note":""},{"id":"R0233","tid":"T0052","ev":"シングルス","cat":"ミドル","sex":"女子","draw":24,"place":"優勝","pid":"P0208","status":"承認済","submitted":"2026-08-13","note":""},{"id":"R0234","tid":"T0052","ev":"シングルス","cat":"ミドル","sex":"女子","draw":24,"place":"準優勝","pid":"P0040","status":"承認済","submitted":"2026-08-13","note":""},{"id":"R0235","tid":"T0052","ev":"シングルス","cat":"ミドル","sex":"女子","draw":24,"place":"ベスト4","pid":"P0108","status":"承認済","submitted":"2026-08-13","note":""},{"id":"R0236","tid":"T0052","ev":"シングルス","cat":"ミドル","sex":"女子","draw":24,"place":"ベスト4","pid":"P0186","status":"承認済","submitted":"2026-08-13","note":""},{"id":"R0237","tid":"T0052","ev":"ダブルス","cat":"フリー","sex":"男子","draw":24,"place":"優勝","pid":"P0149","status":"承認済","submitted":"2026-08-13","note":""},{"id":"R0238","tid":"T0052","ev":"ダブルス","cat":"フリー","sex":"男子","draw":24,"place":"準優勝","pid":"P0127","status":"承認済","submitted":"2026-08-13","note":""},{"id":"R0239","tid":"T0052","ev":"ダブルス","cat":"フリー","sex":"男子","draw":24,"place":"ベスト4","pid":"P0113","status":"承認済","submitted":"2026-08-13","note":""},{"id":"R0240","tid":"T0052","ev":"ダブルス","cat":"フリー","sex":"男子","draw":24,"place":"ベスト4","pid":"P0137","status":"承認済","submitted":"2026-08-13","note":""},{"id":"R0241","tid":"T0052","ev":"ダブルス","cat":"フリー","sex":"女子","draw":21,"place":"優勝","pid":"P0018","status":"承認済","submitted":"2026-08-13","note":""},{"id":"R0242","tid":"T0052","ev":"ダブルス","cat":"フリー","sex":"女子","draw":21,"place":"準優勝","pid":"P0148","status":"承認済","submitted":"2026-08-13","note":""},{"id":"R0243","tid":"T0052","ev":"ダブルス","cat":"フリー","sex":"女子","draw":21,"place":"ベスト4","pid":"P0046","status":"承認済","submitted":"2026-08-13","note":""},{"id":"R0244","tid":"T0052","ev":"ダブルス","cat":"フリー","sex":"女子","draw":21,"place":"ベスト4","pid":"P0216","status":"承認済","submitted":"2026-08-13","note":""},{"id":"R0245","tid":"T0052","ev":"ダブルス","cat":"ミドル","sex":"男子","draw":15,"place":"優勝","pid":"P0233","status":"承認済","submitted":"2026-08-13","note":""},{"id":"R0246","tid":"T0052","ev":"ダブルス","cat":"ミドル","sex":"男子","draw":15,"place":"準優勝","pid":"P0195","status":"承認済","submitted":"2026-08-13","note":""},{"id":"R0247","tid":"T0052","ev":"ダブルス","cat":"ミドル","sex":"男子","draw":15,"place":"ベスト4","pid":"P0169","status":"承認済","submitted":"2026-08-13","note":""},{"id":"R0248","tid":"T0052","ev":"ダブルス","cat":"ミドル","sex":"男子","draw":15,"place":"ベスト4","pid":"P0127","status":"承認済","submitted":"2026-08-13","note":""},{"id":"R0249","tid":"T0052","ev":"ダブルス","cat":"ミドル","sex":"女子","draw":24,"place":"優勝","pid":"P0108","status":"承認済","submitted":"2026-08-13","note":""},{"id":"R0250","tid":"T0052","ev":"ダブルス","cat":"ミドル","sex":"女子","draw":24,"place":"準優勝","pid":"P0206","status":"承認済","submitted":"2026-08-13","note":""},{"id":"R0251","tid":"T0052","ev":"ダブルス","cat":"ミドル","sex":"女子","draw":24,"place":"ベスト4","pid":"P0186","status":"承認済","submitted":"2026-08-13","note":""},{"id":"R0252","tid":"T0052","ev":"ダブルス","cat":"ミドル","sex":"女子","draw":24,"place":"ベスト4","pid":"P0198","status":"承認済","submitted":"2026-08-13","note":""},{"id":"R0253","tid":"T0063","ev":"シングルス","cat":"フリー","sex":"男子","draw":12,"place":"優勝","pid":"P0025","status":"承認済","submitted":"2025-12-23","note":""},{"id":"R0254","tid":"T0063","ev":"シングルス","cat":"フリー","sex":"男子","draw":12,"place":"準優勝","pid":"P0053","status":"承認済","submitted":"2025-12-23","note":""},{"id":"R0255","tid":"T0063","ev":"シングルス","cat":"フリー","sex":"男子","draw":12,"place":"ベスト4","pid":"P0001","status":"承認済","submitted":"2025-12-23","note":""},{"id":"R0256","tid":"T0063","ev":"シングルス","cat":"フリー","sex":"男子","draw":12,"place":"ベスト4","pid":"P0009","status":"承認済","submitted":"2025-12-23","note":""},{"id":"R0257","tid":"T0063","ev":"シングルス","cat":"フリー","sex":"女子","draw":13,"place":"優勝","pid":"P0172","status":"承認済","submitted":"2025-12-23","note":""},{"id":"R0258","tid":"T0063","ev":"シングルス","cat":"フリー","sex":"女子","draw":13,"place":"準優勝","pid":"P0072","status":"承認済","submitted":"2025-12-23","note":""},{"id":"R0259","tid":"T0063","ev":"シングルス","cat":"フリー","sex":"女子","draw":13,"place":"ベスト4","pid":"P0028","status":"承認済","submitted":"2025-12-23","note":""},{"id":"R0260","tid":"T0063","ev":"シングルス","cat":"フリー","sex":"女子","draw":13,"place":"ベスト4","pid":"P0240","status":"承認済","submitted":"2025-12-23","note":""},{"id":"R0261","tid":"T0063","ev":"ダブルス","cat":"フリー","sex":"男子","draw":12,"place":"優勝","pid":"P0177","status":"承認済","submitted":"2025-12-23","note":""},{"id":"R0262","tid":"T0063","ev":"ダブルス","cat":"フリー","sex":"男子","draw":12,"place":"準優勝","pid":"P0053","status":"承認済","submitted":"2025-12-23","note":""},{"id":"R0263","tid":"T0063","ev":"ダブルス","cat":"フリー","sex":"男子","draw":12,"place":"ベスト4","pid":"P0075","status":"承認済","submitted":"2025-12-23","note":""},{"id":"R0264","tid":"T0063","ev":"ダブルス","cat":"フリー","sex":"男子","draw":12,"place":"ベスト4","pid":"P0107","status":"承認済","submitted":"2025-12-23","note":""},{"id":"R0265","tid":"T0063","ev":"ダブルス","cat":"フリー","sex":"女子","draw":13,"place":"優勝","pid":"P0172","status":"承認済","submitted":"2025-12-23","note":""},{"id":"R0266","tid":"T0063","ev":"ダブルス","cat":"フリー","sex":"女子","draw":13,"place":"準優勝","pid":"P0072","status":"承認済","submitted":"2025-12-23","note":""},{"id":"R0267","tid":"T0063","ev":"ダブルス","cat":"フリー","sex":"女子","draw":13,"place":"ベスト4","pid":"P0210","status":"承認済","submitted":"2025-12-23","note":""},{"id":"R0268","tid":"T0063","ev":"ダブルス","cat":"フリー","sex":"女子","draw":13,"place":"ベスト4","pid":"P0028","status":"承認済","submitted":"2025-12-23","note":""},{"id":"R0269","tid":"T0063","ev":"ミックスダブルス","cat":"フリー","sex":"混合","draw":20,"place":"優勝","pid":"P0072","status":"承認済","submitted":"2025-12-23","note":""},{"id":"R0270","tid":"T0063","ev":"ミックスダブルス","cat":"フリー","sex":"混合","draw":20,"place":"準優勝","pid":"P0065","status":"承認済","submitted":"2025-12-23","note":""},{"id":"R0271","tid":"T0063","ev":"ミックスダブルス","cat":"フリー","sex":"混合","draw":20,"place":"ベスト4","pid":"P0028","status":"承認済","submitted":"2025-12-23","note":""},{"id":"R0272","tid":"T0063","ev":"ミックスダブルス","cat":"フリー","sex":"混合","draw":20,"place":"ベスト4","pid":"P0025","status":"承認済","submitted":"2025-12-23","note":""},{"id":"R0273","tid":"T0071","ev":"シングルス","cat":"フリー","sex":"男子","draw":21,"place":"優勝","pid":"P0223","status":"承認済","submitted":"2025-12-23","note":""},{"id":"R0274","tid":"T0071","ev":"シングルス","cat":"フリー","sex":"男子","draw":21,"place":"準優勝","pid":"P0083","status":"承認済","submitted":"2025-12-23","note":""},{"id":"R0275","tid":"T0071","ev":"シングルス","cat":"フリー","sex":"男子","draw":21,"place":"ベスト4","pid":"P0203","status":"承認済","submitted":"2025-12-23","note":""},{"id":"R0276","tid":"T0071","ev":"シングルス","cat":"フリー","sex":"男子","draw":21,"place":"ベスト4","pid":"P0217","status":"承認済","submitted":"2025-12-23","note":""},{"id":"R0277","tid":"T0071","ev":"シングルス","cat":"フリー","sex":"女子","draw":16,"place":"優勝","pid":"P0118","status":"承認済","submitted":"2025-12-23","note":""},{"id":"R0278","tid":"T0071","ev":"シングルス","cat":"フリー","sex":"女子","draw":16,"place":"準優勝","pid":"P0254","status":"承認済","submitted":"2025-12-23","note":""},{"id":"R0279","tid":"T0071","ev":"シングルス","cat":"フリー","sex":"女子","draw":16,"place":"ベスト4","pid":"P0078","status":"承認済","submitted":"2025-12-23","note":""},{"id":"R0280","tid":"T0071","ev":"シングルス","cat":"フリー","sex":"女子","draw":16,"place":"ベスト4","pid":"P0150","status":"承認済","submitted":"2025-12-23","note":""},{"id":"R0281","tid":"T0071","ev":"ダブルス","cat":"フリー","sex":"男子","draw":21,"place":"優勝","pid":"P0257","status":"承認済","submitted":"2025-12-23","note":""},{"id":"R0282","tid":"T0071","ev":"ダブルス","cat":"フリー","sex":"男子","draw":21,"place":"準優勝","pid":"P0125","status":"承認済","submitted":"2025-12-23","note":""},{"id":"R0283","tid":"T0071","ev":"ダブルス","cat":"フリー","sex":"男子","draw":21,"place":"ベスト4","pid":"P0223","status":"承認済","submitted":"2025-12-23","note":""},{"id":"R0284","tid":"T0071","ev":"ダブルス","cat":"フリー","sex":"男子","draw":21,"place":"ベスト4","pid":"P0083","status":"承認済","submitted":"2025-12-23","note":""},{"id":"R0285","tid":"T0071","ev":"ダブルス","cat":"フリー","sex":"女子","draw":16,"place":"優勝","pid":"P0150","status":"承認済","submitted":"2025-12-23","note":""},{"id":"R0286","tid":"T0071","ev":"ダブルス","cat":"フリー","sex":"女子","draw":16,"place":"準優勝","pid":"P0254","status":"承認済","submitted":"2025-12-23","note":""},{"id":"R0287","tid":"T0071","ev":"ダブルス","cat":"フリー","sex":"女子","draw":16,"place":"ベスト4","pid":"P0162","status":"承認済","submitted":"2025-12-23","note":""},{"id":"R0288","tid":"T0071","ev":"ダブルス","cat":"フリー","sex":"女子","draw":16,"place":"ベスト4","pid":"P0078","status":"承認済","submitted":"2025-12-23","note":""},{"id":"R0289","tid":"T0078","ev":"ダブルス","cat":"フリー","sex":"男子","draw":12,"place":"優勝","pid":"P0223","status":"承認済","submitted":"2026-08-09","note":""},{"id":"R0290","tid":"T0078","ev":"ダブルス","cat":"フリー","sex":"男子","draw":12,"place":"準優勝","pid":"P0083","status":"承認済","submitted":"2026-08-09","note":""},{"id":"R0291","tid":"T0078","ev":"ダブルス","cat":"フリー","sex":"男子","draw":12,"place":"ベスト4","pid":"P0175","status":"承認済","submitted":"2026-08-09","note":""},{"id":"R0292","tid":"T0078","ev":"ダブルス","cat":"フリー","sex":"男子","draw":12,"place":"ベスト4","pid":"P0147","status":"承認済","submitted":"2026-08-09","note":""},{"id":"R0293","tid":"T0078","ev":"ダブルス","cat":"フリー","sex":"女子","draw":12,"place":"優勝","pid":"P0078","status":"承認済","submitted":"2026-08-09","note":""},{"id":"R0294","tid":"T0078","ev":"ダブルス","cat":"フリー","sex":"女子","draw":12,"place":"準優勝","pid":"P0118","status":"承認済","submitted":"2026-08-09","note":""},{"id":"R0295","tid":"T0078","ev":"ダブルス","cat":"フリー","sex":"女子","draw":12,"place":"ベスト4","pid":"P0150","status":"承認済","submitted":"2026-08-09","note":""},{"id":"R0296","tid":"T0078","ev":"ダブルス","cat":"フリー","sex":"女子","draw":12,"place":"ベスト4","pid":"P0254","status":"承認済","submitted":"2026-08-09","note":""},{"id":"R0297","tid":"T0078","ev":"ダブルス","cat":"ミドル","sex":"男子","draw":12,"place":"優勝","pid":"P0125","status":"承認済","submitted":"2026-08-09","note":""},{"id":"R0298","tid":"T0078","ev":"ダブルス","cat":"ミドル","sex":"男子","draw":12,"place":"準優勝","pid":"P0217","status":"承認済","submitted":"2026-08-09","note":""},{"id":"R0299","tid":"T0078","ev":"ダブルス","cat":"ミドル","sex":"男子","draw":12,"place":"ベスト4","pid":"P0227","status":"承認済","submitted":"2026-08-09","note":""},{"id":"R0300","tid":"T0078","ev":"ダブルス","cat":"ミドル","sex":"男子","draw":12,"place":"ベスト4","pid":"P0047","status":"承認済","submitted":"2026-08-09","note":""},{"id":"R0301","tid":"T0078","ev":"ダブルス","cat":"ミドル","sex":"女子","draw":12,"place":"優勝","pid":"P0210","status":"承認済","submitted":"2026-08-09","note":""},{"id":"R0302","tid":"T0078","ev":"ダブルス","cat":"ミドル","sex":"女子","draw":12,"place":"準優勝","pid":"P0058","status":"承認済","submitted":"2026-08-09","note":""},{"id":"R0303","tid":"T0078","ev":"ダブルス","cat":"ミドル","sex":"女子","draw":12,"place":"ベスト4","pid":"P0238","status":"承認済","submitted":"2026-08-09","note":""},{"id":"R0304","tid":"T0078","ev":"ダブルス","cat":"ミドル","sex":"女子","draw":12,"place":"ベスト4","pid":"P0120","status":"承認済","submitted":"2026-08-09","note":""},{"id":"R0305","tid":"T0085","ev":"ダブルス","cat":"シニア","sex":"男子","draw":18,"place":"優勝","pid":"P0119","status":"承認済","submitted":"2025-12-15","note":""},{"id":"R0306","tid":"T0085","ev":"ダブルス","cat":"シニア","sex":"男子","draw":18,"place":"準優勝","pid":"P0139","status":"承認済","submitted":"2025-12-15","note":""},{"id":"R0307","tid":"T0085","ev":"ダブルス","cat":"シニア","sex":"男子","draw":18,"place":"ベスト4","pid":"P0233","status":"承認済","submitted":"2025-12-15","note":""},{"id":"R0308","tid":"T0085","ev":"ダブルス","cat":"シニア","sex":"男子","draw":18,"place":"ベスト4","pid":"P0065","status":"承認済","submitted":"2025-12-15","note":""},{"id":"R0309","tid":"T0085","ev":"ダブルス","cat":"シニア","sex":"女子","draw":18,"place":"優勝","pid":"P0054","status":"承認済","submitted":"2025-12-15","note":""},{"id":"R0310","tid":"T0085","ev":"ダブルス","cat":"シニア","sex":"女子","draw":18,"place":"準優勝","pid":"P0086","status":"承認済","submitted":"2025-12-15","note":""},{"id":"R0311","tid":"T0085","ev":"ダブルス","cat":"シニア","sex":"女子","draw":18,"place":"ベスト4","pid":"P0030","status":"承認済","submitted":"2025-12-15","note":""},{"id":"R0312","tid":"T0085","ev":"ダブルス","cat":"シニア","sex":"女子","draw":18,"place":"ベスト4","pid":"P0032","status":"承認済","submitted":"2025-12-15","note":""}],"news":[{"id":"N0006","date":"2026-08-05","category":"お知らせ","title":"当協会における夏季休業について（ご案内）","body":"8月11日（火）から8月16日（日）まで、事務局を休業いたします。期間中のお問い合わせへの回答は8月17日以降となります。","url":"","pinned":false,"published":true},{"id":"N0005","date":"2026-07-16","category":"大会結果","title":"第44回全日本バウンドテニス選手権大会　大会結果","body":"大会結果を掲載しました。「大会結果」ページからご覧いただけます。","url":"","pinned":false,"published":true},{"id":"N0004","date":"2026-07-01","category":"ランキング","title":"BTPランキングを更新しました（2026年7月1日付）","body":"直近52週の成績にもとづき、日本ランキングを更新しました。","url":"","pinned":false,"published":true},{"id":"N0003","date":"2026-06-20","category":"重要","title":"大会結果の提出期限について","body":"公認大会の結果は、終了後14日以内にご提出ください。提出が遅れるとランキングへの反映が翌々月になります。","url":"","pinned":true,"published":true},{"id":"N0002","date":"2026-05-12","category":"お知らせ","title":"2026年度の公認大会申請の受付を開始しました","body":"開催60日前までに申請してください。申請書は各都道府県協会を通じて事務局へお送りください。","url":"","pinned":false,"published":true},{"id":"N0001","date":"2026-04-09","category":"大会情報","title":"第44回全日本バウンドテニス選手権大会　開催会場・日程について","body":"2026年11月21日（土）・22日（日）、大阪府立体育会館 第2競技場にて開催します。","url":"","pinned":false,"published":true}],"content":{"settings":{"asOf":"","periodWeeks":52,"topN":6,"lowGrades":["G4","G5"],"lowGradeCap":2,"minPlays":2,"gradeLabels":{"G1":"全国","G2":"地域ブロック","G3":"都道府県","G4":"地区・市民","G5":"認定ローカル"},"points":{"G1":{"優勝":1000,"準優勝":700,"ベスト4":450,"ベスト8":280,"ベスト16":150,"1回戦突破":80,"出場":30},"G2":{"優勝":600,"準優勝":420,"ベスト4":270,"ベスト8":168,"ベスト16":90,"1回戦突破":48,"出場":18},"G3":{"優勝":360,"準優勝":252,"ベスト4":162,"ベスト8":101,"ベスト16":54,"1回戦突破":29,"出場":11},"G4":{"優勝":180,"準優勝":126,"ベスト4":81,"ベスト8":50,"ベスト16":27,"1回戦突破":14,"出場":5},"G5":{"優勝":90,"準優勝":63,"ベスト4":41,"ベスト8":25,"ベスト16":14,"1回戦突破":7,"出場":3}},"drawCoef":[{"min":32,"coef":1},{"min":16,"coef":0.85},{"min":8,"coef":0.7},{"min":4,"coef":0.5}]},"site":{"orgName":"公益財団法人 日本バウンドテニス協会","siteName":"大会情報ポータル","tagline":"BTP NATIONAL RANKING","heroTitle":"全国の大会情報を一箇所に。\nその結果から、日本ランキングへ。","heroLead":"47都道府県の支部協会・地区協会・クラブが開催する大会の情報を集約し、その結果から統一の「BTPランキング」を算出します。硬式テニスのJOPランキングを参考に、ローカル大会も正当に評価される設計です。","contact":"お問い合わせは各都道府県協会を通じて事務局までお願いします。","noticeBar":"検討用の試作サイトです。掲載データはすべて架空のサンプルです。"},"about":{"intro":"硬式テニスのベテランJOPランキングの構造を参考に、バウンドテニス向けに簡素化した制度です。","policy":["ローカル大会にも必ず点が入る（出場ポイントを置く）","大きな大会に出なければ上位には行けない（グレード差を明確につける）","事務局が手作業で回せる程度に単純（配点表1枚と係数ひとつ）"],"gradeNotes":{"G1":"全日本バウンドテニス選手権大会","G2":"全日本ミドル／シニア選手権、地域ブロック大会、全国レディース大会","G3":"都道府県協会主催の県選手権・県民大会","G4":"地区協会・市町村協会主催のオープン大会","G5":"クラブ・サークル主催で協会が公認した交流戦・サーキット戦"},"flow":[["大会の公認申請","開催60日前までに、日程・会場・種目・想定ドロー数を事務局へ申請します。","主催者"],["グレード判定・掲載","事務局が規模と参加要件からG1〜G5を判定し、大会一覧に掲載します。","事務局"],["結果の登録","終了後14日以内に、入賞者とドロー結果を提出します。","主催者"],["選手照合・承認","事務局が選手IDを照合し、内容を承認します。","事務局"],["ランキング反映","翌月1日の定期更新でBTPに加算されます。","自動処理"]],"rally":"BTラリー戦は対戦形式ではないため、BTPには算入せず「全国BTラリー戦ベスト20」として記録ランキングを別立てとする予定です。"}}};</script>
+
+<script>
+/* =====================================================================
+   共通ユーティリティ
+   ===================================================================== */
+const $  = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+const fmtN = n => Number(n || 0).toLocaleString('ja-JP');
+const WD = ['日','月','火','水','木','金','土'];
+
+/* XSS対策：文字列をHTMLに埋めるときは必ずこれを通す */
+function esc(s){
+  return String(s == null ? '' : s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+/* href に入れてよいURLだけ通す（javascript: 等を弾く） */
+function safeUrl(u){
+  const s = String(u || '').trim();
+  return /^https?:\/\//i.test(s) ? s : '';
+}
+
+const parseDate = s => { const [y,m,d] = String(s).split('-').map(Number); return new Date(y, m-1, d); };
+const fmtDate = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+const dotDate = s => String(s || '').replace(/-/g, '.');
+const addDays = (d, n) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + n);
+const diffDays = (a, b) => Math.round((parseDate(a) - parseDate(b)) / 86400000);
+const todayStr = () => fmtDate(new Date());
+function dateJP(s){ const d = parseDate(s); return `${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,'0')}.${String(d.getDate()).padStart(2,'0')}（${WD[d.getDay()]}）`; }
+
+/* localStorage は環境によって使えないことがあるので必ず包む */
+const LS = {
+  get(k){ try { const v = localStorage.getItem(LS_PREFIX + k); return v ? JSON.parse(v) : null; } catch(e){ return null; } },
+  set(k, v){ try { localStorage.setItem(LS_PREFIX + k, JSON.stringify(v)); return true; } catch(e){ return false; } },
+  del(k){ try { localStorage.removeItem(LS_PREFIX + k); } catch(e){} }
+};
+
+function toast(msg, kind){
+  const box = $('#toastBody');
+  box.className = 'px-5 py-3 text-sm font-bold shadow-lg ' +
+    (kind === 'error' ? 'bg-brand-red text-white' : kind === 'warn' ? 'bg-amber-400 text-ink' : 'bg-navy text-white');
+  box.textContent = msg;
+  $('#toast').classList.remove('hidden');
+  clearTimeout(toast._t);
+  toast._t = setTimeout(() => $('#toast').classList.add('hidden'), 4200);
+}
+
+/* ツールチップ */
+const tipEl = () => $('#tip');
+function showTip(html, x, y){
+  const t = tipEl(); t.innerHTML = html; t.style.opacity = 1;
+  const r = t.getBoundingClientRect();
+  let left = x + 14, top = y - r.height - 12;
+  if (left + r.width > innerWidth - 8) left = x - r.width - 14;
+  if (top < 8) top = y + 18;
+  t.style.left = left + 'px'; t.style.top = top + 'px';
+}
+const hideTip = () => tipEl().style.opacity = 0;
+function bindTip(el, html){
+  el.addEventListener('mousemove', e => showTip(html, e.clientX, e.clientY));
+  el.addEventListener('mouseleave', hideTip);
+  el.addEventListener('touchstart', e => { const t = e.touches[0]; showTip(html, t.clientX, t.clientY); }, { passive:true });
+}
+
+/* モーダル */
+function openModal(headHtml, bodyHtml){
+  $('#modalHead').innerHTML = headHtml;
+  $('#modalBody').innerHTML = bodyHtml;
+  const m = $('#modal'); m.classList.remove('hidden'); m.classList.add('flex');
+  m.querySelector('.overflow-auto').scrollTop = 0;
+}
+function closeModal(){ const m = $('#modal'); m.classList.add('hidden'); m.classList.remove('flex'); }
+document.addEventListener('click', e => { if (e.target.closest('[data-close]')) closeModal(); });
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Escape') return;
+  closeModal(); closeLogin();
+});
+</script>
+
+<script>
+/* =====================================================================
+   マスタ定義とランキング集計
+   ===================================================================== */
+const GRADES = ['G1','G2','G3','G4','G5'];
+const PLACES = ['優勝','準優勝','ベスト4','ベスト8','ベスト16','1回戦突破','出場'];
+const EVENTS_LIST = ['シングルス','ダブルス','ミックスダブルス'];
+const SEXES = ['男子','女子'];
+const CATS = ['フリー','ミドル','シニア'];
+const CAT_MIN_AGE = { 'フリー':16, 'ミドル':45, 'シニア':60 };
+const REGIONS = {
+  '北海道・東北':['北海道','青森','岩手','宮城','秋田','山形','福島'],
+  '関東':['茨城','栃木','群馬','埼玉','千葉','東京','神奈川','山梨'],
+  '北信越':['新潟','富山','石川','福井','長野'],
+  '東海':['岐阜','静岡','愛知','三重'],
+  '近畿':['滋賀','京都','大阪','兵庫','奈良','和歌山'],
+  '中国':['鳥取','島根','岡山','広島','山口'],
+  '四国':['徳島','香川','愛媛','高知'],
+  '九州・沖縄':['福岡','佐賀','長崎','熊本','大分','宮崎','鹿児島','沖縄']
+};
+const PREF2REGION = {}; Object.entries(REGIONS).forEach(([r, ps]) => ps.forEach(p => PREF2REGION[p] = r));
+const PREFS = Object.keys(PREF2REGION);
+const gi = g => GRADES.indexOf(g);
+
+function ageAt(p, dateStr){ return parseDate(dateStr).getFullYear() - Number(p.birth || 0); }
+function drawCoef(S, draw){
+  const rows = [...(S.drawCoef || [])].sort((a,b) => b.min - a.min);
+  for (const r of rows) if (draw >= r.min) return r.coef;
+  return rows.length ? rows[rows.length-1].coef : 1;
+}
+function awardedPoint(S, grade, place, draw){
+  const base = (S.points[grade] || {})[place] || 0;
+  return Math.round(base * drawCoef(S, draw));
+}
+const boardKey = (ev, sex, cat) => `${ev}|${sex}|${cat}`;
+
+/** 承認済みの結果からランキングを算出する。asOf を変えれば過去時点も同じ関数で再現できる */
+function computeRankings(D, asOfArg){
+  const S = D.content.settings;
+  const as = asOfArg || S.asOf || todayStr();
+  const from = fmtDate(addDays(parseDate(as), -7 * (S.periodWeeks || 52)));
+  const tById = Object.fromEntries(D.tournaments.map(t => [t.id, t]));
+  const pById = Object.fromEntries(D.players.map(p => [p.id, p]));
+  const acc = {};
+  const push = (key, pid, e) => {
+    (acc[key] = acc[key] || {});
+    (acc[key][pid] = acc[key][pid] || { comps: [] }).comps.push(e);
+  };
+
+  for (const r of D.results){
+    if (r.status !== '承認済') continue;
+    const t = tById[r.tid]; if (!t) continue;
+    if (t.date > as || t.date < from) continue;
+    const p = pById[r.pid]; if (!p) continue;
+    const draw = Number(r.draw) || Number(t.draw) || 0;
+    const pts = awardedPoint(S, t.grade, r.place, draw);
+    if (!pts) continue;
+    const entry = { grade:t.grade, place:r.place, pts, tid:t.id, name:t.name, date:t.date };
+    push(boardKey(r.ev, r.sex, r.cat), r.pid, entry);
+    /* カテゴリ跨ぎ：フリーの成績は、年齢を満たす上位カテゴリにも算入 */
+    if (r.cat === 'フリー'){
+      const age = ageAt(p, t.date);
+      for (const c of ['ミドル','シニア']) if (age >= CAT_MIN_AGE[c]) push(boardKey(r.ev, r.sex, c), r.pid, entry);
+    }
+  }
+
+  const boards = {};
+  for (const [key, players] of Object.entries(acc)){
+    const rows = [];
+    for (const [pid, v] of Object.entries(players)){
+      const sorted = [...v.comps].sort((a,b) => b.pts - a.pts);
+      const counted = []; let low = 0;
+      for (const c of sorted){
+        if ((S.lowGrades || []).includes(c.grade)){ if (low >= S.lowGradeCap) continue; low++; }
+        counted.push(c);
+        if (counted.length >= S.topN) break;
+      }
+      const p = pById[pid];
+      rows.push({
+        pid, name:p.name, kana:p.kana, pref:p.pref, age:ageAt(p, as),
+        pts: counted.reduce((s,c) => s + c.pts, 0),
+        counted, plays: v.comps.length,
+        lastDate: sorted.reduce((m,c) => c.date > m ? c.date : m, ''),
+        bestHigh: [...counted].sort((a,b) => gi(a.grade) - gi(b.grade) || b.pts - a.pts)[0]
+      });
+    }
+    const listed = rows.filter(r => r.plays >= (S.minPlays || 1));
+    listed.sort((a,b) => b.pts - a.pts
+      || gi(a.bestHigh.grade) - gi(b.bestHigh.grade)
+      || (b.lastDate > a.lastDate ? 1 : b.lastDate < a.lastDate ? -1 : 0)
+      || a.plays - b.plays);
+    listed.forEach((r,i) => r.rank = i + 1);
+    boards[key] = { rows: listed, holders: rows.length - listed.length };
+  }
+  return boards;
+}
+
+/** 過去12か月ぶんの順位をその場で計算する（履歴シートを持たなくて済む） */
+function buildHistory(D, months){
+  const as = parseDate(D.content.settings.asOf || todayStr());
+  const snaps = {};
+  for (let i = (months || 12) - 1; i >= 0; i--){
+    const d = new Date(as.getFullYear(), as.getMonth() - i, 1);
+    const key = fmtDate(d);
+    const b = computeRankings(D, key);
+    const o = {};
+    for (const [k, board] of Object.entries(b)){
+      const m = {}; board.rows.slice(0, 40).forEach(r => m[r.pid] = r.rank);
+      if (Object.keys(m).length) o[k] = m;
+    }
+    snaps[key] = o;
+  }
+  return snaps;
+}
+function rankHistory(key, pid){
+  return Object.keys(HISTORY).sort()
+    .map(m => ({ month:m, rank:(HISTORY[m][key] || {})[pid] }))
+    .filter(x => x.rank != null);
+}
+function prevRank(key, pid){
+  const ms = Object.keys(HISTORY).sort();
+  for (let i = ms.length - 1; i >= 0; i--){
+    const r = (HISTORY[ms[i]][key] || {})[pid];
+    if (r != null) return r;
+  }
+  return null;
+}
+function tournamentStatus(t, as){
+  if (t.date < as) return { k:'done', t:'終了' };
+  const dd = diffDays(t.deadline || t.date, as);
+  if (dd < 0)  return { k:'closed', t:'受付終了' };
+  if (dd <= 7) return { k:'soon', t:`締切まで${dd}日` };
+  return { k:'open', t:'受付中' };
+}
+</script>
+
+<script>
+/* =====================================================================
+   データの読み込み — 3段フォールバック
+     ① Apps Script API   ② localStorage のキャッシュ   ③ コード内のデフォルト
+   ===================================================================== */
+let DATA = null, S = null, AS = '', BOARDS = {}, HISTORY = {}, GL = {};
+let T_BY_ID = {}, P_BY_ID = {};
+let DATA_SOURCE = 'default';   /* 'api' | 'cache' | 'default' */
+
+function normalise(raw){
+  const d = {
+    tournaments: Array.isArray(raw.tournaments) ? raw.tournaments : [],
+    players:     Array.isArray(raw.players)     ? raw.players     : [],
+    results:     Array.isArray(raw.results)     ? raw.results     : [],
+    news:        Array.isArray(raw.news)        ? raw.news        : [],
+    content:     raw.content && typeof raw.content === 'object' ? raw.content : {}
+  };
+  /* 設定が欠けていてもデフォルトで埋めて画面が壊れないようにする */
+  const dc = DEFAULT_DATA.content;
+  d.content.settings = Object.assign({}, dc.settings, d.content.settings || {});
+  d.content.site     = Object.assign({}, dc.site,     d.content.site     || {});
+  d.content.about    = Object.assign({}, dc.about,    d.content.about    || {});
+  const st = d.content.settings;
+  if (!st.asOf) st.asOf = todayStr();
+  d.tournaments.forEach(t => {
+    t.cats = Array.isArray(t.cats) ? t.cats : String(t.cats || '').split(',').map(s => s.trim()).filter(Boolean);
+    t.evs  = Array.isArray(t.evs)  ? t.evs  : String(t.evs  || '').split(',').map(s => s.trim()).filter(Boolean);
+    t.draw = Number(t.draw) || 0;
+    if (!t.deadline) t.deadline = t.date;
+  });
+  d.players.forEach(p => { p.birth = Number(p.birth) || 1990; });
+  d.results.forEach(r => { r.draw = Number(r.draw) || 0; if (!r.status) r.status = '承認済'; });
+  return d;
+}
+
+async function apiGet(){
+  if (!SHEETS_API_URL) throw new Error('api-not-configured');
+  const out = {};
+  const types = TYPES.concat('content');
+  await Promise.all(types.map(async type => {
+    const res = await fetch(`${SHEETS_API_URL}?type=${encodeURIComponent(type)}`, { cache:'no-store' });
+    if (!res.ok) throw new Error(`HTTP ${res.status} (${type})`);
+    const json = await res.json();
+    if (json && json.ok === false) throw new Error(json.error || type);
+    out[type] = json.items !== undefined ? json.items : json;
+  }));
+  /* content は [{key,json}] で返るのでオブジェクトに畳む */
+  if (Array.isArray(out.content)){
+    const o = {};
+    out.content.forEach(row => {
+      try { o[row.key] = typeof row.json === 'string' ? JSON.parse(row.json) : row.json; } catch(e){}
+    });
+    out.content = o;
+  }
+  return out;
+}
+
+async function loadData(){
+  /* ① API */
+  if (SHEETS_API_URL){
+    try {
+      const raw = await apiGet();
+      DATA_SOURCE = 'api';
+      LS.set('cache', raw);
+      return normalise(raw);
+    } catch (e){
+      console.warn('APIから読めませんでした:', e.message);
+    }
+  }
+  /* ② localStorage */
+  const cached = LS.get('cache');
+  if (cached){
+    DATA_SOURCE = SHEETS_API_URL ? 'cache' : 'local';
+    return normalise(cached);
+  }
+  /* ③ コード内デフォルト */
+  DATA_SOURCE = 'default';
+  return normalise(JSON.parse(JSON.stringify(DEFAULT_DATA)));
+}
+
+function applyData(d){
+  DATA = d;
+  S = DATA.content.settings;
+  AS = S.asOf || todayStr();
+  GL = S.gradeLabels || {};
+  T_BY_ID = Object.fromEntries(DATA.tournaments.map(t => [t.id, t]));
+  P_BY_ID = Object.fromEntries(DATA.players.map(p => [p.id, p]));
+  BOARDS = computeRankings(DATA);
+  HISTORY = buildHistory(DATA, 12);
+}
+</script>
+
+<script>
+/* =====================================================================
+   公開画面の描画
+   ===================================================================== */
+const NAV = [
+  ['home','トップ'], ['events','大会情報'], ['ranking','日本ランキング'],
+  ['results','大会結果'], ['news','お知らせ'], ['about','ランキング制度']
+];
+function go(v){
+  $$('.view').forEach(s => s.hidden = s.dataset.view !== v);
+  $$('#mainNav .nav-a').forEach(b => b.setAttribute('aria-current', b.dataset.nav === v ? 'page' : 'false'));
+  $('#drawer').hidden = true;
+  scrollTo({ top:0, behavior:'instant' });
+  hideTip();
+  if (v === 'ranking') renderRanking(true);
+  if (v === 'results') renderResults(true);
+}
+function buildNav(){
+  $('#mainNav').innerHTML = NAV.map(([v,l]) =>
+    `<button class="nav-a relative text-[13px] font-bold tracking-wide px-4 py-2 text-ink-soft hover:text-navy" data-nav="${v}">${esc(l)}</button>`).join('');
+  $('#drawer').innerHTML = NAV.map(([v,l]) =>
+    `<button class="w-full text-left px-6 py-3.5 border-b border-rule text-sm font-bold" data-nav="${v}">${esc(l)}</button>`).join('');
+  $('#footNav').innerHTML = NAV.slice(1).map(([v,l]) =>
+    `<button class="text-white/85 hover:text-white" data-nav="${v}">${esc(l)}</button>`).join('<span class="text-white/30">／</span>');
+}
+document.addEventListener('click', e => {
+  const b = e.target.closest('[data-nav]');
+  if (b){ e.preventDefault(); go(b.dataset.nav); }
+});
+$('#menuBtn').addEventListener('click', () => $('#drawer').hidden = !$('#drawer').hidden);
+
+const gchip = g => `<span class="inline-flex items-center gap-1.5 text-[11px] font-bold border border-rule px-2 py-0.5 whitespace-nowrap">
+  <i class="w-2 h-2 block" style="background:var(--tw-g)"></i>${esc(g)} ${esc(GL[g] || '')}</span>`.replace('var(--tw-g)', gcolor(g));
+function gcolor(g){ return { G1:'#001f33', G2:'#103f5f', G3:'#23628b', G4:'#4a86ae', G5:'#7ba7c6' }[g] || '#8a8a8a'; }
+function statusTag(st){
+  const cls = st.k === 'soon' ? 'bg-brand-red text-white'
+            : st.k === 'open' ? 'bg-navy text-white' : 'bg-paper text-ink-mute';
+  return `<span class="text-[11px] font-bold tracking-wide px-2.5 py-0.5 ${cls}">${esc(st.t)}</span>`;
+}
+
+/* ---------- 大会の1行 ---------- */
+function eventRow(t){
+  const st = tournamentStatus(t, AS);
+  const tagCls = ['open','soon'].includes(st.k) ? 'bg-navy' : 'bg-ink-mute';
+  return `<div class="grid grid-cols-[auto_auto_1fr_auto] max-md:grid-cols-[auto_1fr] gap-x-4 gap-y-0 items-center py-4 border-b border-rule cursor-pointer hover:bg-neutral-50" data-ev="${esc(t.id)}">
+    <span class="${tagCls} text-white text-[11.5px] font-bold px-3.5 py-0.5 whitespace-nowrap">${esc(GL[t.grade] || t.grade)}</span>
+    <span class="text-[13px] text-ink-soft tracking-wide tnum md:border-l md:border-rule md:pl-4 whitespace-nowrap">${dateJP(t.date)}</span>
+    <div class="max-md:col-span-2 max-md:mt-2">
+      <div class="text-[15px] font-bold tracking-wide leading-relaxed">${esc(t.name)}</div>
+      <div class="text-xs text-ink-soft mt-0.5">
+        <span class="text-ink-mute mr-1">会場</span>${esc(t.pref)}・${esc(t.venue)}
+        <span class="hidden md:inline"><span class="text-ink-mute mx-1">主催</span>${esc(t.host)}</span></div>
+      <div class="flex gap-1.5 flex-wrap mt-2">${gchip(t.grade)}
+        ${t.cats.map(c => `<span class="text-[11px] text-ink-soft border border-rule px-2">${esc(c)}</span>`).join('')}
+        ${t.evs.map(v => `<span class="text-[11px] text-ink-soft border border-rule px-2">${esc(v)}</span>`).join('')}</div>
+    </div>
+    <div class="max-md:col-span-2 max-md:mt-2 text-right max-md:text-left text-xs text-ink-soft leading-7 whitespace-nowrap max-md:flex max-md:gap-4 max-md:items-center">
+      <div>${statusTag(st)}</div>
+      <div>優勝 <b class="text-[17px] text-navy tnum">${fmtN((S.points[t.grade]||{})['優勝'])}</b> pt 基準</div>
+      <div class="text-ink-mute">締切 ${esc(dotDate(t.deadline))}</div>
+    </div>
+  </div>`;
+}
+document.addEventListener('click', e => {
+  const r = e.target.closest('[data-ev]'); if (r) openEvent(r.dataset.ev);
+});
+
+/* ---------- 大会情報ページ ---------- */
+let evShown = 20;
+function buildEventFilters(){
+  const sel = (id, label, opts) =>
+    `<div class="flex items-center gap-2"><span class="text-[11.5px] font-bold text-ink-soft tracking-wider">${label}</span>
+      <select id="${id}" class="border border-rule px-2 py-1.5 text-[13px] bg-white"><option value="">すべて</option>
+      ${opts.map(o => `<option>${esc(o)}</option>`).join('')}</select></div>`;
+  $('#evFilters').innerHTML =
+    sel('fRegion','地域', Object.keys(REGIONS)) +
+    sel('fPref','都道府県', PREFS) +
+    sel('fMonth','開催月', []) +
+    sel('fCat','カテゴリ', CATS) +
+    sel('fEvent','種目', [...new Set(DATA.tournaments.flatMap(t => t.evs))]) +
+    `<input id="fQ" type="text" placeholder="大会名・会場・主催" class="border border-rule px-3 py-1.5 text-[13px] w-52">
+     <div class="flex items-center gap-2 ml-auto"><span class="text-[11.5px] font-bold text-ink-soft tracking-wider">並び</span>
+       <select id="fSort" class="border border-rule px-2 py-1.5 text-[13px] bg-white">
+         <option value="date">開催日が近い順</option><option value="deadline">締切が近い順</option>
+         <option value="grade">グレードが高い順</option><option value="past">過去の大会（新しい順）</option>
+       </select></div>`;
+  const ms = $('#fMonth');
+  for (let i = 1; i <= 12; i++) ms.add(new Option(i + '月', i));
+  $('#evGrades').innerHTML = GRADES.map(g =>
+    `<button class="chip rounded-full border border-rule px-4 py-1 text-[12.5px] font-bold text-ink-soft" data-grade="${g}" aria-pressed="false">${g} ${esc(GL[g]||'')}</button>`).join('');
+  ['fRegion','fPref','fMonth','fCat','fEvent','fSort'].forEach(id => $('#'+id).addEventListener('change', () => {
+    if (id === 'fRegion'){
+      const r = $('#fRegion').value, ps = $('#fPref');
+      ps.innerHTML = '<option value="">すべて</option>';
+      (r ? REGIONS[r] : PREFS).forEach(p => ps.add(new Option(p, p)));
+    }
+    renderEvents(true);
+  }));
+  $('#fQ').addEventListener('input', () => renderEvents(true));
+  $('#evGrades').addEventListener('click', e => {
+    const b = e.target.closest('.chip'); if (!b) return;
+    toggleChip(b); renderEvents(true);
+  });
+  $('[data-status=open]').addEventListener('click', function(){ toggleChip(this); renderEvents(true); });
+  $('#evMore').addEventListener('click', () => { evShown += 20; renderEvents(); });
+}
+function toggleChip(b){
+  const on = b.getAttribute('aria-pressed') !== 'true';
+  b.setAttribute('aria-pressed', on);
+  b.classList.toggle('bg-navy', on); b.classList.toggle('text-white', on);
+  b.classList.toggle('border-navy', on); b.classList.toggle('text-ink-soft', !on);
+}
+function renderEvents(reset){
+  if (reset) evShown = 20;
+  const f = {
+    region:$('#fRegion').value, pref:$('#fPref').value, month:$('#fMonth').value,
+    cat:$('#fCat').value, ev:$('#fEvent').value, q:$('#fQ').value.trim(), sort:$('#fSort').value,
+    grades:$$('#evGrades .chip[aria-pressed=true]').map(b => b.dataset.grade),
+    openOnly:$('[data-status=open]').getAttribute('aria-pressed') === 'true'
+  };
+  let list = DATA.tournaments.filter(t => {
+    if (t.published === false) return false;
+    if (f.sort === 'past' ? t.date >= AS : t.date < AS) return false;
+    if (f.region && PREF2REGION[t.pref] !== f.region) return false;
+    if (f.pref && t.pref !== f.pref) return false;
+    if (f.month && (parseDate(t.date).getMonth()+1) != f.month) return false;
+    if (f.cat && !t.cats.includes(f.cat)) return false;
+    if (f.ev && !t.evs.includes(f.ev)) return false;
+    if (f.grades.length && !f.grades.includes(t.grade)) return false;
+    if (f.openOnly && !['open','soon'].includes(tournamentStatus(t, AS).k)) return false;
+    if (f.q && !(t.name + t.venue + t.pref + t.host).includes(f.q)) return false;
+    return true;
+  });
+  list.sort((a,b) =>
+      f.sort === 'grade'    ? gi(a.grade) - gi(b.grade) || a.date.localeCompare(b.date)
+    : f.sort === 'deadline' ? String(a.deadline).localeCompare(String(b.deadline))
+    : f.sort === 'past'     ? b.date.localeCompare(a.date)
+    : a.date.localeCompare(b.date));
+  $('#evCount').textContent = `${list.length} 件`;
+  const page = list.slice(0, evShown);
+  if (!page.length){
+    $('#eventList').innerHTML = `<div class="py-14 text-center text-ink-mute text-sm">条件に合う大会が見つかりませんでした。</div>`;
+    $('#evMore').hidden = true; return;
+  }
+  let html = '', cur = '';
+  page.forEach(t => {
+    if (f.sort === 'date' || f.sort === 'past'){
+      const d = parseDate(t.date), key = `${d.getFullYear()}-${d.getMonth()}`;
+      if (key !== cur){
+        cur = key;
+        const n = list.filter(x => x.date.startsWith(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`)).length;
+        html += `<div class="flex items-baseline gap-3 mt-7 pb-2 border-b-2 border-navy">
+          <b class="text-[17px] tracking-wide">${d.getFullYear()}年 ${d.getMonth()+1}月</b>
+          <span class="ml-auto text-[11.5px] text-ink-mute">${n} 大会</span></div>`;
+      }
+    }
+    html += eventRow(t);
+  });
+  $('#eventList').innerHTML = html;
+  $('#evMore').hidden = list.length <= evShown;
+}
+
+function openEvent(id){
+  const t = T_BY_ID[id]; if (!t) return;
+  const st = tournamentStatus(t, AS);
+  const coef = drawCoef(S, t.draw);
+  const hasRes = DATA.results.some(r => r.tid === id && r.status === '承認済');
+  const entry = safeUrl(t.entryUrl), doc = safeUrl(t.docUrl);
+  openModal(
+    `<div class="flex gap-2 flex-wrap mb-2.5">
+      <span class="bg-white text-navy text-[11.5px] font-bold px-3.5 py-0.5">${esc(t.grade)} ${esc(GL[t.grade]||'')}</span>
+      <span class="text-[11px] font-bold px-2.5 py-0.5 ${st.k==='open'?'bg-white text-navy':'bg-white/15'}">${esc(st.t)}</span></div>
+     <h3 class="text-[19px] font-bold leading-relaxed pr-8">${esc(t.name)}</h3>`,
+    `<dl class="grid grid-cols-[104px_1fr] text-[13.5px]">
+      ${[['開催日', dateJP(t.date)], ['会場', `${esc(t.venue)}（${esc(t.pref)}）`], ['主催', esc(t.host)],
+         ['種目', esc(t.evs.join(' / '))], ['カテゴリ', esc(t.cats.join(' / '))],
+         ['想定ドロー', `${esc(t.draw)}名（ドロー係数 ${coef.toFixed(2)}）`],
+         ['参加費', esc(t.fee)], ['申込締切', esc(dotDate(t.deadline))]]
+        .map(([k,v]) => `<dt class="text-[11.5px] font-bold text-ink-soft tracking-wider py-2 border-b border-rule">${k}</dt>
+                         <dd class="py-2 border-b border-rule">${v}</dd>`).join('')}
+     </dl>
+     <h4 class="text-sm font-bold tracking-wide mt-6 mb-2">この大会で獲得できるBTP</h4>
+     <table class="w-full text-sm"><thead><tr class="bg-navy text-white text-[11px]">
+       <th class="text-left px-3 py-2">成績</th><th class="text-right px-3 py-2">基準pt</th><th class="text-right px-3 py-2">係数適用後</th></tr></thead>
+       <tbody>${PLACES.map(pl => {
+         const base = (S.points[t.grade]||{})[pl] || 0;
+         return `<tr class="border-b border-rule"><td class="px-3 py-2">${esc(pl)}</td>
+           <td class="px-3 py-2 text-right tnum">${fmtN(base)}</td>
+           <td class="px-3 py-2 text-right tnum font-bold text-navy">${fmtN(Math.round(base*coef))}</td></tr>`;
+       }).join('')}</tbody></table>
+     <div class="flex gap-2.5 flex-wrap mt-5">
+       ${entry ? `<a href="${esc(entry)}" target="_blank" rel="noopener" class="rounded-full bg-navy text-white font-bold text-sm px-7 py-2.5">申し込む</a>` : ''}
+       ${doc ? `<a href="${esc(doc)}" target="_blank" rel="noopener" class="rounded-full border border-rule font-bold text-sm px-7 py-2.5">要項をみる</a>` : ''}
+       ${hasRes ? `<button class="rounded-full border border-rule font-bold text-sm px-7 py-2.5" data-openres="${esc(id)}">結果を見る</button>` : ''}
+     </div>
+     ${!entry && !doc ? `<p class="text-[11.5px] text-ink-mute mt-4 leading-relaxed">申込フォームや要項PDFのリンクは、管理画面から登録すると、ここにボタンが出ます。</p>` : ''}`);
+}
+document.addEventListener('click', e => {
+  const b = e.target.closest('[data-openres]'); if (b) openResult(b.dataset.openres);
+});
+</script>
+
+<script>
+/* =====================================================================
+   ランキング画面
+   ===================================================================== */
+let rkShown = 50;
+function rkey(){
+  const ev  = $('#rEvent [aria-pressed=true]')?.dataset.v || 'シングルス';
+  const sex = ev === 'ミックスダブルス' ? '混合' : ($('#rSex [aria-pressed=true]')?.dataset.v || '男子');
+  const cat = $('#rCat [aria-pressed=true]')?.dataset.v || 'フリー';
+  return `${ev}|${sex}|${cat}`;
+}
+function buildRankFilters(){
+  const chips = (id, arr, label) => $('#'+id).innerHTML = arr.map((v,i) =>
+    `<button class="chip rounded-full border px-4 py-1 text-[12.5px] font-bold ${i===0?'bg-navy text-white border-navy':'border-rule text-ink-soft'}"
+      data-v="${esc(v)}" aria-pressed="${i===0}">${esc(label ? label(v) : v)}</button>`).join('');
+  const evs = EVENTS_LIST.filter(e => DATA.results.some(r => r.ev === e));
+  chips('rEvent', evs.length ? evs : EVENTS_LIST, v => v === 'ミックスダブルス' ? 'ミックス' : v);
+  chips('rSex', SEXES);
+  chips('rCat', CATS, v => `${v} ${CAT_MIN_AGE[v]}+`);
+  PREFS.forEach(p => $('#rPref').add(new Option(p, p)));
+  ['rEvent','rSex','rCat'].forEach(id => $('#'+id).addEventListener('click', e => {
+    const b = e.target.closest('.chip'); if (!b || b.disabled) return;
+    $$('#'+id+' .chip').forEach(x => {
+      const on = x === b;
+      x.setAttribute('aria-pressed', on);
+      x.classList.toggle('bg-navy', on); x.classList.toggle('text-white', on);
+      x.classList.toggle('border-navy', on); x.classList.toggle('border-rule', !on);
+      x.classList.toggle('text-ink-soft', !on);
+    });
+    if (id === 'rEvent'){
+      const mixed = b.dataset.v === 'ミックスダブルス';
+      $$('#rSex .chip').forEach(x => { x.disabled = mixed; x.classList.toggle('opacity-40', mixed); });
+    }
+    renderRanking(true);
+  }));
+  $('#rPref').addEventListener('change', () => renderRanking(true));
+  $('#rQ').addEventListener('input', () => renderRanking(true));
+  $('#rankMore').addEventListener('click', () => { rkShown += 50; renderRanking(); });
+}
+function deltaCell(rank, prev){
+  if (prev == null) return `<span class="text-[11.5px] text-ink-mute">—</span>`;
+  const d = prev - rank;
+  if (d > 0) return `<span class="text-[11.5px] font-bold text-navy">▲${d}</span>`;
+  if (d < 0) return `<span class="text-[11.5px] font-bold text-brand-red">▼${-d}</span>`;
+  return `<span class="text-[11.5px] text-ink-mute">—</span>`;
+}
+function sparkline(hist){
+  if (hist.length < 2) return `<p class="text-[11px] text-ink-mute">推移を出すには2か月分以上の記録が必要です。</p>`;
+  const W = 170, H = 50, p = 7;
+  const vals = hist.map(h => h.rank);
+  const min = Math.min(...vals), span = Math.max(Math.max(...vals) - min, 1);
+  const pts = hist.map((h,i) => [p + (W-2*p)*(i/(hist.length-1)), p + (H-2*p)*((h.rank-min)/span)]);
+  return `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="順位推移">
+    <path d="${pts.map((q,i) => (i?'L':'M')+q[0].toFixed(1)+' '+q[1].toFixed(1)).join(' ')}" fill="none" stroke="#001F33" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"></path>
+    <circle cx="${pts.at(-1)[0].toFixed(1)}" cy="${pts.at(-1)[1].toFixed(1)}" r="4" fill="#B50000"></circle>
+    ${pts.map((q,i) => `<circle class="hoverpt" cx="${q[0].toFixed(1)}" cy="${q[1].toFixed(1)}" r="7" fill="transparent" data-m="${esc(hist[i].month)}" data-v="${hist[i].rank}"></circle>`).join('')}
+  </svg>`;
+}
+function renderRanking(reset){
+  if (reset) rkShown = 50;
+  const key = rkey(), board = BOARDS[key] || { rows:[], holders:0 };
+  const pf = $('#rPref').value, q = $('#rQ').value.trim();
+  let rows = board.rows;
+  if (pf) rows = rows.filter(r => r.pref === pf);
+  if (q)  rows = rows.filter(r => r.name.includes(q));
+  $('#rankSummary').innerHTML = `<b>${esc(key.replace(/\|/g, ' ／ '))}</b>　掲載 ${fmtN(rows.length)} 名`
+    + (board.holders ? `　（ほかに出場が少なくランキング対象外のポイント保有者 ${board.holders} 名）` : '');
+  const t = $('#rankTable');
+  if (!rows.length){
+    t.innerHTML = `<tbody><tr><td class="py-14 text-center text-ink-mute text-sm">該当する選手がいません。</td></tr></tbody>`;
+    $('#rankMore').hidden = true; return;
+  }
+  const page = rows.slice(0, rkShown);
+  t.innerHTML = `<thead><tr class="bg-navy text-white text-[11px] tracking-wider">
+      <th class="text-left px-3 py-2.5">順位</th><th class="text-left px-2 py-2.5 w-11">変動</th>
+      <th class="text-left px-3 py-2.5">選手</th><th class="text-left px-3 py-2.5 hidden md:table-cell">所属</th>
+      <th class="text-right px-3 py-2.5">BTP</th><th class="text-right px-3 py-2.5 hidden md:table-cell">有効/出場</th>
+      <th class="text-left px-3 py-2.5 hidden lg:table-cell">最上位グレードの成績</th><th></th>
+    </tr></thead><tbody>${page.map(r => `<tr class="border-b border-rule hover:bg-neutral-50">
+      <td class="px-3 py-3 text-xl font-bold tnum ${r.rank===1?'text-brand-red':'text-navy'}">${r.rank}</td>
+      <td class="px-2 py-3">${deltaCell(r.rank, prevRank(key, r.pid))}</td>
+      <td class="px-3 py-3"><div class="text-[15px] font-bold tracking-wide">${esc(r.name)}</div>
+        <div class="text-[11px] text-ink-mute">${r.age}歳${r.kana ? '　'+esc(r.kana) : ''}</div></td>
+      <td class="px-3 py-3 hidden md:table-cell">${esc(r.pref)}</td>
+      <td class="px-3 py-3 text-right text-[17px] font-bold text-navy tnum">${fmtN(r.pts)}</td>
+      <td class="px-3 py-3 text-right tnum hidden md:table-cell">${r.counted.length} / ${r.plays}</td>
+      <td class="px-3 py-3 hidden lg:table-cell">${gchip(r.bestHigh.grade)} ${esc(r.bestHigh.place)}</td>
+      <td class="px-3 py-3 text-right"><button class="rounded-full border border-rule px-3 py-0.5 text-[11.5px] font-bold text-ink-soft hover:border-navy hover:text-navy" data-exp="${esc(r.pid)}">内訳</button></td>
+    </tr>`).join('')}</tbody>`;
+  $('#rankMore').hidden = rows.length <= rkShown;
+
+  $$('[data-exp]', t).forEach(btn => btn.addEventListener('click', ev => {
+    ev.stopPropagation();
+    const tr = btn.closest('tr');
+    if (tr.nextElementSibling?.dataset.detail){ tr.nextElementSibling.remove(); btn.textContent = '内訳'; return; }
+    const row = rows.find(x => x.pid === btn.dataset.exp);
+    const c = [...row.counted].sort((a,b) => gi(a.grade) - gi(b.grade) || b.pts - a.pts);
+    const hist = rankHistory(key, row.pid);
+    const det = document.createElement('tr');
+    det.dataset.detail = '1';
+    det.innerHTML = `<td colspan="8" class="bg-paper p-0"><div class="grid lg:grid-cols-[1.5fr_1fr] fade-in">
+      <div class="px-5 py-5">
+        <p class="text-[11.5px] text-ink-mute mb-2"><b class="block text-sm text-ink">${esc(row.name)} — 有効${c.length}大会のポイント構成</b>合計 ${fmtN(row.pts)} pt</p>
+        <div class="stack flex w-full h-[22px] gap-0.5">${c.map((x,i) =>
+          `<span data-i="${i}" style="width:${(x.pts/row.pts*100).toFixed(2)}%;background:${gcolor(x.grade)}"></span>`).join('')}</div>
+        <div class="flex flex-wrap gap-x-4 gap-y-1 mt-2.5 text-[11.5px] text-ink-soft">${c.map(x =>
+          `<span class="inline-flex items-center gap-1.5"><i class="w-2.5 h-2.5 block" style="background:${gcolor(x.grade)}"></i>${esc(x.grade)} ${esc(x.place)} <b class="tnum text-ink">${fmtN(x.pts)}</b></span>`).join('')}</div>
+        <p class="text-[11px] text-ink-mute mt-2.5 leading-relaxed">出場 ${row.plays} 大会のうち上位${c.length}大会を算入（${esc((S.lowGrades||[]).join('・'))}は合わせて最大${S.lowGradeCap}大会まで）。</p>
+        <button class="mt-3 rounded-full bg-navy text-white text-[12.5px] font-bold px-5 py-2" data-player="${esc(row.pid)}" data-key="${esc(key)}">戦績をすべて見る</button>
+      </div>
+      <div class="px-5 py-5 lg:border-l border-rule">
+        <p class="text-[11.5px] text-ink-mute mb-2"><b class="block text-sm text-ink">順位の推移</b>直近${hist.length}か月（上が上位）</p>
+        ${sparkline(hist)}
+        <p class="text-[11px] text-ink-mute mt-2">${hist.length ? `最高 ${Math.min(...hist.map(h=>h.rank))}位 ／ 現在 ${row.rank}位` : ''}</p>
+      </div></div></td>`;
+    tr.after(det);
+    btn.textContent = '閉じる';
+    $$('.stack > span', det).forEach((sp,i) => {
+      const x = c[i];
+      bindTip(sp, `<b>${esc(x.grade)} ${esc(GL[x.grade]||'')}・${esc(x.place)}</b>${esc(x.name)}<br><span class="tnum">${fmtN(x.pts)} pt（合計の ${(x.pts/row.pts*100).toFixed(0)}%）</span>`);
+    });
+    $$('.hoverpt', det).forEach(d => bindTip(d, `<b>${esc(d.dataset.m.slice(0,7))}</b><span class="tnum">${esc(d.dataset.v)} 位</span>`));
+  }));
+}
+document.addEventListener('click', e => {
+  const b = e.target.closest('[data-player]'); if (b) openPlayer(b.dataset.player, b.dataset.key);
+});
+function openPlayer(pid, key){
+  const p = P_BY_ID[pid];
+  const row = ((BOARDS[key] || {}).rows || []).find(r => r.pid === pid);
+  const counted = new Set(row ? row.counted.map(c => c.tid + '|' + c.place) : []);
+  const all = DATA.results.filter(r => r.pid === pid && r.status === '承認済')
+    .map(r => ({ r, t: T_BY_ID[r.tid] })).filter(o => o.t && o.t.date <= AS)
+    .sort((a,b) => b.t.date.localeCompare(a.t.date));
+  openModal(
+    `<h3 class="text-[19px] font-bold">${esc(p.name)}
+       <span class="block text-xs font-normal opacity-75 mt-1">${esc(p.pref)}／${ageAt(p, AS)}歳／選手ID ${esc(p.regno || p.id)}</span></h3>`,
+    `<p class="text-xs text-ink-mute">${esc(key.replace(/\|/g,' ／ '))}　現在
+       <b class="text-navy text-base">${row ? row.rank + '位' : '—'}</b>　${row ? fmtN(row.pts) + ' pt' : ''}</p>
+     <h4 class="text-sm font-bold mt-4 mb-2">集計期間内の戦績（${all.length}件）</h4>
+     <table class="w-full text-sm"><thead><tr class="bg-navy text-white text-[11px]">
+       <th class="text-left px-3 py-2">開催日</th><th class="text-left px-3 py-2">大会</th>
+       <th class="text-left px-3 py-2 hidden sm:table-cell">種目</th><th class="text-left px-3 py-2">成績</th>
+       <th class="text-right px-3 py-2">pt</th><th class="text-left px-3 py-2">算入</th></tr></thead>
+     <tbody>${all.map(({r,t}) => {
+       const on = counted.has(t.id + '|' + r.place);
+       const pts = awardedPoint(S, t.grade, r.place, r.draw || t.draw);
+       return `<tr class="border-b border-rule">
+         <td class="px-3 py-2 text-[11px] tnum">${esc(dotDate(t.date))}</td>
+         <td class="px-3 py-2"><div class="text-[13px] font-bold">${esc(t.name)}</div><div>${gchip(t.grade)}</div></td>
+         <td class="px-3 py-2 text-[11px] hidden sm:table-cell">${esc(r.ev)}<br>${esc(r.cat)}</td>
+         <td class="px-3 py-2">${esc(r.place)}</td>
+         <td class="px-3 py-2 text-right font-bold tnum ${on?'text-navy':'text-ink-mute'}">${fmtN(pts)}</td>
+         <td class="px-3 py-2">${on ? '<span class="text-[10.5px] font-bold bg-navy text-white px-2 py-0.5">算入</span>'
+                                    : '<span class="text-[10.5px] font-bold bg-paper text-ink-soft px-2 py-0.5">対象外</span>'}</td></tr>`;
+     }).join('')}</tbody></table>
+     <p class="text-xs text-ink-mute mt-3">上位${S.topN}大会（${esc((S.lowGrades||[]).join('・'))}は最大${S.lowGradeCap}大会）だけがBTPに算入されます。</p>`);
+}
+</script>
+
+<script>
+/* =====================================================================
+   大会結果・お知らせ・制度・トップ
+   ===================================================================== */
+let sShown = 20;
+function renderResults(reset){
+  if (reset) sShown = 20;
+  if (!$('#sGrade').options.length || $('#sGrade').options.length === 1){
+    GRADES.forEach(g => $('#sGrade').add(new Option(g + ' ' + (GL[g]||''), g)));
+    PREFS.forEach(p => $('#sPref').add(new Option(p, p)));
+    ['sPref','sGrade'].forEach(id => $('#'+id).addEventListener('change', () => renderResults(true)));
+    $('#sQ').addEventListener('input', () => renderResults(true));
+    $('#sMore').addEventListener('click', () => { sShown += 20; renderResults(); });
+  }
+  const pf = $('#sPref').value, gd = $('#sGrade').value, q = $('#sQ').value.trim();
+  const list = DATA.tournaments
+    .filter(t => DATA.results.some(r => r.tid === t.id && r.status === '承認済'))
+    .filter(t => (!pf || t.pref === pf) && (!gd || t.grade === gd) && (!q || t.name.includes(q)))
+    .sort((a,b) => b.date.localeCompare(a.date));
+  $('#sCount').textContent = `${list.length} 大会`;
+  const page = list.slice(0, sShown);
+  $('#resultList').innerHTML = page.length ? page.map(t => {
+    const rs = DATA.results.filter(r => r.tid === t.id && r.status === '承認済');
+    const champs = [...new Set(rs.filter(r => r.place === '優勝').map(r => (P_BY_ID[r.pid]||{}).name).filter(Boolean))];
+    return `<div class="grid grid-cols-[auto_auto_1fr_auto] max-md:grid-cols-[auto_1fr] gap-x-4 items-center py-4 border-b border-rule cursor-pointer hover:bg-neutral-50" data-res="${esc(t.id)}">
+      <span class="bg-ink-mute text-white text-[11.5px] font-bold px-3.5 py-0.5 whitespace-nowrap">${esc(GL[t.grade]||t.grade)}</span>
+      <span class="text-[13px] text-ink-soft tnum md:border-l md:border-rule md:pl-4 whitespace-nowrap">${dateJP(t.date)}</span>
+      <div class="max-md:col-span-2 max-md:mt-2">
+        <div class="text-[15px] font-bold tracking-wide">${esc(t.name)}</div>
+        <div class="text-xs text-ink-soft mt-0.5"><span class="text-ink-mute mr-1">会場</span>${esc(t.pref)}・${esc(t.venue)}</div>
+        <div class="flex gap-1.5 flex-wrap mt-2">${gchip(t.grade)}
+          <span class="text-[11px] text-ink-soft border border-rule px-2">優勝 ${esc(champs.slice(0,2).join('・'))}${champs.length>2?' ほか':''}</span></div>
+      </div>
+      <div class="max-md:col-span-2 text-right max-md:text-left text-[12.5px] font-bold text-navy underline underline-offset-4 max-md:mt-2">結果を見る</div>
+    </div>`;
+  }).join('') : `<div class="py-14 text-center text-ink-mute text-sm">該当する大会がありません。</div>`;
+  $('#sMore').hidden = list.length <= sShown;
+  $$('[data-res]').forEach(el => el.addEventListener('click', () => openResult(el.dataset.res)));
+}
+function openResult(tid){
+  const t = T_BY_ID[tid];
+  const rs = DATA.results.filter(r => r.tid === tid && r.status === '承認済');
+  const groups = {};
+  rs.forEach(r => { const k = [r.ev, r.cat, r.sex].join('|'); (groups[k] = groups[k] || []).push(r); });
+  openModal(
+    `<div class="flex gap-2 flex-wrap mb-2.5">
+       <span class="bg-white text-navy text-[11.5px] font-bold px-3.5 py-0.5">${esc(t.grade)} ${esc(GL[t.grade]||'')}</span>
+       <span class="text-[11px] font-bold px-2.5 py-0.5 bg-white/15">結果確定</span></div>
+     <h3 class="text-[19px] font-bold leading-relaxed pr-8">${esc(t.name)}</h3>`,
+    `<dl class="grid grid-cols-[104px_1fr] text-[13.5px] mb-2">
+       ${[['開催日',dateJP(t.date)],['会場',`${esc(t.venue)}（${esc(t.pref)}）`],['主催',esc(t.host)]]
+         .map(([k,v]) => `<dt class="text-[11.5px] font-bold text-ink-soft tracking-wider py-2 border-b border-rule">${k}</dt>
+                          <dd class="py-2 border-b border-rule">${v}</dd>`).join('')}</dl>
+     ${Object.entries(groups).map(([k, arr]) => {
+       const [ev, cat, sex] = k.split('|');
+       const draw = Math.max(...arr.map(r => r.draw || t.draw || 0));
+       const coef = drawCoef(S, draw);
+       const sorted = [...arr].sort((a,b) => PLACES.indexOf(a.place) - PLACES.indexOf(b.place));
+       return `<h4 class="text-sm font-bold tracking-wide mt-5 mb-2">${esc(ev)}　${esc(cat)}${sex !== '混合' ? '・'+esc(sex) : ''}
+         <span class="text-[11px] font-normal text-ink-mute">（本戦 ${draw}名／係数 ${coef.toFixed(2)}）</span></h4>
+         <table class="w-full text-sm"><thead><tr class="bg-navy text-white text-[11px]">
+           <th class="text-left px-3 py-2 w-24">成績</th><th class="text-left px-3 py-2">選手</th>
+           <th class="text-left px-3 py-2 hidden sm:table-cell">所属</th><th class="text-right px-3 py-2">獲得pt</th></tr></thead>
+         <tbody>${sorted.map(r => { const pl = P_BY_ID[r.pid] || {};
+           return `<tr class="border-b border-rule"><td class="px-3 py-2">${esc(r.place)}</td>
+             <td class="px-3 py-2 text-[14px] font-bold">${esc(pl.name || r.pid)}</td>
+             <td class="px-3 py-2 text-[11px] hidden sm:table-cell">${esc(pl.pref || '')}</td>
+             <td class="px-3 py-2 text-right font-bold text-navy tnum">${fmtN(awardedPoint(S, t.grade, r.place, r.draw || t.draw))}</td></tr>`;
+         }).join('')}</tbody></table>`;
+     }).join('')}`);
+}
+
+function newsRow(n, compact){
+  const url = safeUrl(n.url);
+  return `<div class="flex gap-4 items-start py-4 border-b border-rule ${compact?'':'cursor-pointer hover:bg-neutral-50'}" ${compact?'':`data-news="${esc(n.id)}"`}>
+    <span class="bg-navy text-white text-[11.5px] font-bold px-3.5 py-0.5 whitespace-nowrap shrink-0">${esc(n.category || 'お知らせ')}</span>
+    <span class="text-[13px] text-ink-soft tnum shrink-0 hidden sm:block">${esc(dotDate(n.date))}</span>
+    <div class="min-w-0">
+      <div class="text-[15px] font-bold tracking-wide">${n.pinned ? '<span class="text-brand-red mr-1">★</span>' : ''}${esc(n.title)}</div>
+      <div class="text-[11px] text-ink-mute sm:hidden tnum">${esc(dotDate(n.date))}</div>
+      ${compact ? '' : `<p class="text-[13px] text-ink-soft mt-1 leading-relaxed">${esc(n.body)}</p>`}
+      ${url ? `<a href="${esc(url)}" target="_blank" rel="noopener" class="inline-block mt-1.5 text-[12.5px] font-bold text-navy underline underline-offset-4">添付ファイルを開く</a>` : ''}
+    </div></div>`;
+}
+function renderNews(){
+  const list = DATA.news.filter(n => n.published !== false)
+    .sort((a,b) => (b.pinned?1:0)-(a.pinned?1:0) || String(b.date).localeCompare(String(a.date)));
+  $('#homeNews').innerHTML = list.slice(0,5).map(n => newsRow(n, true)).join('')
+    || `<div class="py-10 text-center text-ink-mute text-sm">お知らせはまだありません。</div>`;
+  $('#newsList').innerHTML = list.map(n => newsRow(n, false)).join('')
+    || `<div class="py-14 text-center text-ink-mute text-sm">お知らせはまだありません。</div>`;
+  $$('#homeNews [class*=cursor], #homeNews > div').forEach(el => {});
+  $$('#homeNews > div').forEach((el, i) => {
+    el.classList.add('cursor-pointer');
+    el.addEventListener('click', () => openNews(list[i]));
+  });
+}
+function openNews(n){
+  const url = safeUrl(n.url);
+  openModal(`<div class="text-[11px] font-bold tracking-widest opacity-70">${esc(dotDate(n.date))}　${esc(n.category||'')}</div>
+    <h3 class="text-[19px] font-bold leading-relaxed mt-1 pr-8">${esc(n.title)}</h3>`,
+    `<p class="text-sm leading-8 whitespace-pre-wrap">${esc(n.body)}</p>
+     ${url ? `<a href="${esc(url)}" target="_blank" rel="noopener" class="inline-block mt-5 rounded-full bg-navy text-white font-bold text-sm px-7 py-2.5">添付ファイルを開く</a>` : ''}`);
+}
+document.addEventListener('click', e => {
+  const b = e.target.closest('[data-news]');
+  if (b){ const n = DATA.news.find(x => x.id === b.dataset.news); if (n) openNews(n); }
+});
+
+function renderMonthChart(){
+  const host = $('#monthChart');
+  const start = parseDate(AS);
+  const months = Array.from({length:8}, (_,i) => new Date(start.getFullYear(), start.getMonth()+i, 1));
+  const counts = months.map(d => {
+    const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+    const o = { d, total:0 }; GRADES.forEach(g => o[g] = 0);
+    DATA.tournaments.filter(t => t.published !== false && t.date.startsWith(key)).forEach(t => { o[t.grade]++; o.total++; });
+    return o;
+  });
+  const max = Math.max(1, ...counts.map(c => c.total));
+  const W=520,H=200,padL=30,padB=24,padT=18, bw=(W-padL)/months.length;
+  const step = max > 20 ? 10 : max > 8 ? 5 : 2;
+  let gr = '', bars = '';
+  for (let v = 0; v <= max; v += step){
+    const y = H - padB - (H-padT-padB)*(v/max);
+    gr += `<line x1="${padL}" y1="${y}" x2="${W}" y2="${y}" stroke="#E2E2E2"></line>
+           <text x="${padL-7}" y="${y+3.5}" text-anchor="end" fill="#8a8a8a" font-size="10">${v}</text>`;
+  }
+  counts.forEach((c,i) => {
+    const x = padL + i*bw + bw*0.18, w = bw*0.64;
+    let acc = 0;
+    GRADES.forEach(g => {
+      if (!c[g]) return;
+      const hh = (H-padT-padB)*(c[g]/max), y = H - padB - acc - hh;
+      bars += `<rect class="mbar" data-m="${c.d.getMonth()+1}" data-g="${g}" data-v="${c[g]}" data-total="${c.total}"
+        x="${x}" y="${y+1}" width="${w}" height="${Math.max(hh-2,1)}" fill="${gcolor(g)}"></rect>`;
+      acc += hh;
+    });
+    bars += `<text x="${x+w/2}" y="${H-padB+14}" text-anchor="middle" fill="#8a8a8a" font-size="10">${c.d.getMonth()+1}月</text>`;
+    if (c.total) bars += `<text x="${x+w/2}" y="${H-padB-acc-6}" text-anchor="middle" fill="#001F33" font-size="11.5" font-weight="700">${c.total}</text>`;
+  });
+  host.innerHTML = `<svg viewBox="0 0 ${W} ${H}" width="100%" preserveAspectRatio="xMidYMid meet" role="img" aria-label="月別の大会開催数">
+      ${gr}${bars}<line x1="${padL}" y1="${H-padB}" x2="${W}" y2="${H-padB}" stroke="#001F33"></line></svg>
+    <div class="flex flex-wrap gap-x-4 gap-y-1 mt-3 text-[11.5px] text-ink-soft">${GRADES.map(g =>
+      `<span class="inline-flex items-center gap-1.5"><i class="w-2.5 h-2.5 block" style="background:${gcolor(g)}"></i>${g} ${esc(GL[g]||'')}</span>`).join('')}</div>`;
+  $$('.mbar', host).forEach(r => bindTip(r,
+    `<b>${esc(r.dataset.m)}月・${esc(r.dataset.g)} ${esc(GL[r.dataset.g]||'')}</b><span class="tnum">${esc(r.dataset.v)} 大会 ／ 月合計 ${esc(r.dataset.total)} 大会</span>`));
+}
+
+function renderHome(){
+  const site = DATA.content.site;
+  $('#noticeBar').textContent = site.noticeBar || '';
+  $('#noticeBar').hidden = !site.noticeBar;
+  $('#hdOrg').textContent = site.orgName || '';
+  $('#hdSite').textContent = site.siteName || '';
+  $('#hdTag').textContent = site.tagline || '';
+  $('#heroTitle').innerHTML = esc(site.heroTitle || '').replace(/\n/g, '<br>');
+  $('#heroLead').textContent = site.heroLead || '';
+  $('#footContact').textContent = site.contact || '';
+  document.title = `${site.siteName || '大会情報ポータル'}｜${site.orgName || ''}`;
+
+  const pub = DATA.tournaments.filter(t => t.published !== false);
+  const upcoming = pub.filter(t => t.date >= AS);
+  const open = upcoming.filter(t => ['open','soon'].includes(tournamentStatus(t, AS).k));
+  const soon = upcoming.filter(t => tournamentStatus(t, AS).k === 'soon');
+  const ranked = new Set(); Object.values(BOARDS).forEach(b => b.rows.forEach(r => ranked.add(r.pid)));
+  const past = pub.filter(t => t.date < AS && t.date >= fmtDate(addDays(parseDate(AS), -365)));
+  const withRes = past.filter(t => DATA.results.some(r => r.tid === t.id && r.status === '承認済'));
+  const rate = past.length ? Math.round(withRes.length / past.length * 100) : 0;
+
+  $('#homeStats').innerHTML = [
+    ['掲載中の公認大会', fmtN(pub.length), '大会', `うち今後の開催 ${upcoming.length} 大会`],
+    ['エントリー受付中', fmtN(open.length), '大会', `うち締切7日以内 ${soon.length} 大会`],
+    ['ランキング掲載選手', fmtN(ranked.size), '名', `登録選手 ${fmtN(DATA.players.length)} 名`],
+    ['結果登録率', String(rate), '%', `直近1年の終了大会 ${past.length} 件のうち`]
+  ].map(([k,v,u,s]) => `<div class="bg-white px-5 py-5">
+      <div class="text-xs text-ink-soft">${esc(k)}</div>
+      <div class="text-[34px] font-bold text-navy leading-tight tnum">${esc(v)}<em class="not-italic text-sm ml-1">${esc(u)}</em></div>
+      <div class="w-8 h-[3px] bg-brand-red my-1.5"></div>
+      <div class="text-[11.5px] text-ink-mute leading-relaxed">${esc(s)}</div></div>`).join('');
+
+  $('#homeEvents').innerHTML = open.sort((a,b) => String(a.deadline).localeCompare(String(b.deadline))).slice(0,5).map(eventRow).join('')
+    || `<div class="py-10 text-center text-ink-mute text-sm">現在エントリー受付中の大会はありません。</div>`;
+
+  const key = 'シングルス|男子|フリー';
+  const rows = (BOARDS[key] || {rows:[]}).rows.slice(0,5);
+  $('#miniRank').innerHTML = `<thead><tr class="bg-navy text-white text-[11px]">
+      <th class="text-left px-3 py-2">順位</th><th class="text-left px-3 py-2">選手</th>
+      <th class="text-left px-3 py-2 hidden sm:table-cell">所属</th><th class="text-right px-3 py-2">BTP</th>
+      <th class="text-left px-2 py-2 w-11">変動</th></tr></thead>
+    <tbody>${rows.length ? rows.map(r => `<tr class="border-b border-rule">
+      <td class="px-3 py-3 text-xl font-bold tnum ${r.rank===1?'text-brand-red':'text-navy'}">${r.rank}</td>
+      <td class="px-3 py-3 text-[15px] font-bold">${esc(r.name)}</td>
+      <td class="px-3 py-3 hidden sm:table-cell">${esc(r.pref)}</td>
+      <td class="px-3 py-3 text-right text-[17px] font-bold text-navy tnum">${fmtN(r.pts)}</td>
+      <td class="px-2 py-3">${deltaCell(r.rank, prevRank(key, r.pid))}</td></tr>`).join('')
+      : `<tr><td class="py-8 text-center text-ink-mute text-sm">まだ順位が出ていません。</td></tr>`}</tbody>`;
+
+  const from = fmtDate(addDays(parseDate(AS), -7 * (S.periodWeeks||52)));
+  $('#asOfNote').textContent = `${dotDate(AS)} 時点`;
+  $('#rankNote').textContent = `${dotDate(AS)} 更新／集計期間 ${dotDate(from)} — ${dotDate(AS)}`;
+}
+
+function renderAbout(){
+  const a = DATA.content.about;
+  const cs = [...(S.drawCoef||[])].sort((x,y) => y.min - x.min);
+  const th = 'bg-navy text-white text-[11px] tracking-wider';
+  const td = 'px-3 py-2 border-b border-rule';
+  $('#aboutBody').innerHTML = `
+    <p class="text-[13.5px] text-ink-soft mb-5">${esc(a.intro)}</p>
+    <div class="bg-paper border-l-4 border-brand-red px-5 py-4 my-5 text-[13.5px] text-ink-soft leading-relaxed">
+      <span class="block text-[11.5px] font-bold tracking-widest text-brand-red mb-1.5">設計方針</span>
+      ${(a.policy||[]).map((s,i) => `<b class="text-ink">${['①','②','③'][i]||''}</b> ${esc(s)}`).join('　')}
+    </div>
+
+    <h3 class="text-lg font-bold mt-8 mb-2.5 pl-3 border-l-4 border-navy tracking-wide">1. 大会グレード</h3>
+    <table class="w-full text-sm"><thead><tr class="${th}"><th class="text-left px-3 py-2.5 w-44">グレード</th>
+      <th class="text-left px-3 py-2.5">対象大会の目安</th><th class="text-right px-3 py-2.5 w-24">登録数</th></tr></thead>
+      <tbody>${GRADES.map(g => `<tr><td class="${td}">${gchip(g)}</td>
+        <td class="${td}">${esc((a.gradeNotes||{})[g] || '')}</td>
+        <td class="${td} text-right tnum">${DATA.tournaments.filter(t => t.grade === g).length}</td></tr>`).join('')}</tbody></table>
+
+    <h3 class="text-lg font-bold mt-8 mb-2.5 pl-3 border-l-4 border-navy tracking-wide">2. 配点表</h3>
+    <table class="w-full text-sm"><thead><tr class="${th}"><th class="text-left px-3 py-2.5">成績</th>
+      ${GRADES.map(g => `<th class="text-right px-3 py-2.5">${g}</th>`).join('')}</tr></thead>
+      <tbody>${PLACES.map(pl => `<tr><td class="${td}">${esc(pl)}</td>
+        ${GRADES.map(g => `<td class="${td} text-right tnum">${fmtN((S.points[g]||{})[pl])}</td>`).join('')}</tr>`).join('')}</tbody></table>
+    <p class="text-xs text-ink-mute mt-2.5">この表の数値に、下のドロー係数を掛けたものが実際の付与ポイントです。</p>
+
+    <h4 class="text-sm font-bold mt-6 mb-1.5">ドロー係数</h4>
+    <table class="w-full text-sm"><thead><tr class="${th}"><th class="text-left px-3 py-2.5">本戦ドロー数</th>
+      ${cs.map((c,i) => `<th class="text-right px-3 py-2.5">${i===0 ? c.min+'名以上' : c.min+'〜'+(cs[i-1].min-1)+'名'}</th>`).join('')}</tr></thead>
+      <tbody><tr><td class="${td}">係数</td>${cs.map(c => `<td class="${td} text-right tnum">${c.coef.toFixed(2)}</td>`).join('')}</tr></tbody></table>
+
+    <h3 class="text-lg font-bold mt-8 mb-2.5 pl-3 border-l-4 border-navy tracking-wide">3. 集計ルール</h3>
+    <ul class="list-disc pl-6 text-sm text-ink-soft leading-8 space-y-1">
+      <li><b class="text-ink">集計期間</b>　直近${S.periodWeeks}週のローリング集計。毎月1日に更新します。</li>
+      <li><b class="text-ink">有効大会数</b>　獲得ポイントの上位<b class="text-ink">${S.topN}大会</b>を合計。ただし<b class="text-ink">${esc((S.lowGrades||[]).join('・'))}は合わせて最大${S.lowGradeCap}大会まで</b>。</li>
+      <li><b class="text-ink">ランキング区分</b>　種目（${EVENTS_LIST.join('／')}）× 性別 × カテゴリ（${CATS.join('／')}）。ミックスダブルスは男女共通の1区分です。</li>
+      <li><b class="text-ink">ダブルス</b>　ペアの獲得ポイントを両選手にそれぞれ100%付与します。</li>
+      <li><b class="text-ink">カテゴリ跨ぎ</b>　${CATS.slice(1).map(c => c+'（'+CAT_MIN_AGE[c]+'歳以上）').join('・')}の選手がフリーの部に出場した場合、獲得ポイントは両方のランキングに算入します。逆は不可。</li>
+      <li><b class="text-ink">同ポイント時の順位</b>　①上位グレードでの成績　②直近大会の日付が新しい方　③出場大会数が少ない方。</li>
+      <li><b class="text-ink">掲載条件</b>　集計期間内に${S.minPlays}大会以上の出場。</li>
+    </ul>
+
+    <h3 class="text-lg font-bold mt-8 mb-2.5 pl-3 border-l-4 border-navy tracking-wide">4. 主催者の方へ</h3>
+    <div class="grid md:grid-cols-5 gap-px bg-rule border border-rule">
+      ${(a.flow||[]).map(([t,d,who],i) => `<div class="bg-white px-4 py-5">
+        <div class="text-[11px] font-bold tracking-widest text-brand-red">STEP ${i+1}</div>
+        <h4 class="text-sm font-bold mt-2 mb-1.5">${esc(t)}</h4>
+        <p class="text-xs text-ink-soft leading-relaxed">${esc(d)}</p>
+        <span class="inline-block mt-2.5 text-[10.5px] font-bold tracking-wider bg-paper text-ink-soft px-2.5 py-0.5">${esc(who)}</span>
+      </div>`).join('')}
+    </div>
+
+    <h3 class="text-lg font-bold mt-8 mb-2.5 pl-3 border-l-4 border-navy tracking-wide">5. BTラリー戦の扱い</h3>
+    <p class="text-sm text-ink-soft leading-8">${esc(a.rally)}</p>`;
+}
+</script>
+
+<script>/* =====================================================================
+   認証（Google Identity Services）と管理画面
+   ===================================================================== */
+let ID_TOKEN = null;      /* Googleサインインで得たIDトークン。POSTに添える */
+let ADMIN_USER = null;    /* {email, name} */
+let LOCAL_MODE = false;   /* サーバー未設定のお試しモード */
+let ADM_TAB = 'tournaments';
+let ADM_DIRTY = false;
+
+const CONFIGURED = () => Boolean(SHEETS_API_URL && GOOGLE_CLIENT_ID);
+
+/* ---------- ログイン ---------- */
+function openLogin(){ const m = $('#loginModal'); m.classList.remove('hidden'); m.classList.add('flex'); }
+function closeLogin(){ const m = $('#loginModal'); m.classList.add('hidden'); m.classList.remove('flex'); }
+document.addEventListener('click', e => { if (e.target.closest('[data-close-login]')) closeLogin(); });
+$('#adminLoginBtn').addEventListener('click', openLogin);
+
+function decodeJwt(t){
+  try {
+    const b = t.split('.')[1].replace(/-/g,'+').replace(/_/g,'/');
+    return JSON.parse(decodeURIComponent(atob(b).split('').map(c =>
+      '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join('')));
+  } catch(e){ return {}; }
+}
+function onGoogleCredential(res){
+  ID_TOKEN = res.credential;
+  const p = decodeJwt(ID_TOKEN);
+  ADMIN_USER = { email: p.email || '', name: p.name || '' };
+  LOCAL_MODE = false;
+  closeLogin();
+  openAdmin();
+  toast(`${ADMIN_USER.email} でサインインしました。`);
+}
+function initAuth(){
+  if (!CONFIGURED()){
+    /* サーバー未設定：お試しモードのボタンを出す */
+    $('#localLogin').hidden = false;
+    $('#gsiBtn').innerHTML = '';
+    $('#localLoginBtn').addEventListener('click', () => {
+      LOCAL_MODE = true; ADMIN_USER = { email:'（お試しモード）', name:'' };
+      closeLogin(); openAdmin();
+    });
+    return;
+  }
+  $('#localLogin').hidden = true;
+  const start = () => {
+    if (!(window.google && google.accounts && google.accounts.id)) return setTimeout(start, 300);
+    google.accounts.id.initialize({ client_id: GOOGLE_CLIENT_ID, callback: onGoogleCredential });
+    google.accounts.id.renderButton($('#gsiBtn'), { theme:'outline', size:'large', text:'signin_with', locale:'ja' });
+  };
+  start();
+}
+
+/* ---------- 保存（POST） ---------- */
+/* Apps Script はプリフライトに応答できないので、必ず text/plain で送る */
+async function apiPost(payload){
+  const res = await fetch(SHEETS_API_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify(payload)
+  });
+  if (!res.ok) throw Object.assign(new Error(`HTTP ${res.status}`), { kind:'network' });
+  const json = await res.json();
+  if (json.ok === false) throw Object.assign(new Error(json.error || 'error'), { kind: json.error });
+  return json;
+}
+
+/* localStorage に保存 ＋ サーバーにPOST。結果でメッセージを出し分ける */
+async function saveAll(){
+  const snapshot = {
+    tournaments: DATA.tournaments, players: DATA.players,
+    results: DATA.results, news: DATA.news, content: DATA.content
+  };
+  const localOk = LS.set('cache', snapshot);
+
+  if (!CONFIGURED() || LOCAL_MODE){
+    ADM_DIRTY = false; syncDirty();
+    toast(localOk ? 'この端末に保存しました（サーバー未接続）'
+                  : 'この端末にも保存できませんでした。ブラウザの設定をご確認ください。',
+          localOk ? 'warn' : 'error');
+    return;
+  }
+  if (!ID_TOKEN){ toast('サインインの有効期限が切れました。もう一度サインインしてください。', 'error'); return; }
+
+  $('#admSave').disabled = true;
+  const failed = [];
+  try {
+    for (const type of TYPES){
+      await apiPost({ idToken: ID_TOKEN, type, items: DATA[type] });
+    }
+    for (const key of Object.keys(DATA.content)){
+      await apiPost({ idToken: ID_TOKEN, type:'content', key, content: DATA.content[key] });
+    }
+    ADM_DIRTY = false; syncDirty();
+    toast('スプレッドシートに保存しました。');
+  } catch (err){
+    if (err.kind === 'unauthorized'){
+      toast('このGoogleアカウントには編集権限がありません。事務局に連絡してください。', 'error');
+    } else if (err.kind === 'network' || err instanceof TypeError){
+      toast('通信に失敗しました。この端末には保存済みなので、電波のよい場所でもう一度「保存する」を押してください。', 'error');
+    } else {
+      toast('保存に失敗しました：' + err.message, 'error');
+    }
+  } finally {
+    $('#admSave').disabled = false;
+  }
+}
+
+/* ---------- 管理画面の開閉 ---------- */
+function openAdmin(){
+  $('#adminOverlay').hidden = false;
+  document.body.style.overflow = 'hidden';
+  $('#admMode').textContent = CONFIGURED() && !LOCAL_MODE ? 'サーバー接続中' : 'お試しモード（この端末のみ）';
+  $('#admMode').className = 'text-[11px] px-2 py-0.5 ' + (CONFIGURED() && !LOCAL_MODE ? 'bg-white/15' : 'bg-brand-red');
+  $('#admUser').textContent = ADMIN_USER ? ADMIN_USER.email : '';
+  buildAdminTabs();
+  renderAdmin();
+}
+function closeAdmin(){
+  if (ADM_DIRTY && !confirm('保存していない変更があります。閉じてよろしいですか？')) return;
+  $('#adminOverlay').hidden = true;
+  document.body.style.overflow = '';
+  applyData(DATA);
+  renderHome(); renderMonthChart(); renderNews(); renderAbout();
+  renderEvents(true); renderRanking(true); renderResults(true);
+}
+$('#admClose').addEventListener('click', closeAdmin);
+$('#admSave').addEventListener('click', saveAll);
+$('#admReload').addEventListener('click', async () => {
+  if (ADM_DIRTY && !confirm('保存していない変更は消えます。読み込み直しますか？')) return;
+  const d = await loadData(); applyData(d);
+  ADM_DIRTY = false; syncDirty(); renderAdmin();
+  toast('読み込み直しました。');
+});
+function markDirty(){ ADM_DIRTY = true; syncDirty(); }
+function syncDirty(){ $('#admDirty').hidden = !ADM_DIRTY; }
+addEventListener('beforeunload', e => { if (ADM_DIRTY){ e.preventDefault(); e.returnValue = ''; } });
+
+const ADM_TABS = [
+  ['tournaments','大会'], ['results','結果'], ['players','選手'],
+  ['news','お知らせ'], ['settings','配点・集計'], ['site','サイト文言']
+];
+function buildAdminTabs(){
+  $('#admTabs').innerHTML = ADM_TABS.map(([k,l]) =>
+    `<button class="adm-tab px-6 py-2.5 text-[13px] font-bold tracking-wide" data-tab="${k}" aria-current="${k===ADM_TAB}">${esc(l)}</button>`).join('');
+  $$('#admTabs .adm-tab').forEach(b => b.addEventListener('click', () => {
+    ADM_TAB = b.dataset.tab; buildAdminTabs(); renderAdmin();
+  }));
+}
+
+/* ---------- 汎用パーツ ---------- */
+const BTN = 'rounded-full text-[12.5px] font-bold px-5 py-2';
+const BTN_P = `${BTN} bg-navy text-white`;
+const BTN_S = `${BTN} border border-rule bg-white`;
+const BTN_D = `${BTN} bg-brand-red text-white`;
+const INP = 'border border-rule px-2.5 py-1.5 text-[13px] bg-white w-full';
+const LBL = 'text-[11.5px] font-bold text-ink-soft tracking-wider';
+const CARD = 'bg-white px-6 py-6';
+
+function field(label, html, hint){
+  return `<div class="grid grid-cols-[130px_1fr] gap-3 items-start py-3 border-b border-rule">
+    <label class="${LBL} pt-2">${esc(label)}</label>
+    <div>${html}${hint ? `<p class="text-[11px] text-ink-mute mt-1 leading-relaxed">${esc(hint)}</p>` : ''}</div></div>`;
+}
+function selectHtml(id, opts, val, extra){
+  return `<select id="${id}" class="${INP} max-w-[240px]" ${extra||''}>${opts.map(o =>
+    `<option${String(o) === String(val) ? ' selected' : ''}>${esc(o)}</option>`).join('')}</select>`;
+}
+function checksHtml(name, opts, vals){
+  return `<div class="flex gap-4 flex-wrap">${opts.map(o =>
+    `<label class="inline-flex items-center gap-1.5 text-[13px]">
+      <input type="checkbox" name="${name}" value="${esc(o)}"${(vals||[]).includes(o)?' checked':''}>${esc(o)}</label>`).join('')}</div>`;
+}
+function nextId(arr, prefix, pad){
+  const n = arr.reduce((m,x) => Math.max(m, Number(String(x.id).replace(/\D/g,'')) || 0), 0) + 1;
+  return prefix + String(n).padStart(pad, '0');
+}
+
+/* ---------- 管理画面：本体 ---------- */
+function renderAdmin(){
+  ({ tournaments:admTournaments, results:admResults, players:admPlayers,
+     news:admNews, settings:admSettings, site:admSite }[ADM_TAB] || admTournaments)();
+}
+
+/* ===== 大会 ===== */
+let admEditT = null;
+function admTournaments(){
+  const list = [...DATA.tournaments].sort((a,b) => String(b.date).localeCompare(String(a.date)));
+  $('#admBody').innerHTML = `<div class="grid lg:grid-cols-[1.1fr_.9fr] gap-6 items-start">
+    <div class="${CARD}">
+      <div class="flex gap-2.5 items-center flex-wrap mb-4">
+        <input id="tq" type="text" placeholder="大会名・都道府県・主催" class="${INP} max-w-[240px]">
+        <span class="text-xs text-ink-mute ml-auto">${list.length} 件</span>
+        <button id="tNew" class="${BTN_P}">＋ 新しい大会</button>
+      </div>
+      <div class="max-h-[560px] overflow-auto border border-rule"><table class="w-full text-sm" id="tTable"></table></div>
+    </div>
+    <div class="${CARD}"><h3 class="text-[17px] font-bold mb-1" id="tFormTitle">大会の編集</h3>
+      <p class="text-[11px] text-ink-mute mb-3" id="tFormId"></p>
+      <div id="tForm"></div>
+      <div class="flex gap-2.5 mt-5 flex-wrap">
+        <button id="tSave" class="${BTN_P}">この内容にする</button>
+        <button id="tCancel" class="${BTN_S}">取り消し</button>
+        <button id="tDel" class="${BTN_D} ml-auto">削除</button></div></div></div>`;
+  $('#tq').addEventListener('input', drawTList);
+  $('#tNew').addEventListener('click', () => { admEditT = null; drawTForm(null); });
+  $('#tCancel').addEventListener('click', () => drawTForm(admEditT));
+  $('#tSave').addEventListener('click', saveT);
+  $('#tDel').addEventListener('click', delT);
+  drawTList(); drawTForm(admEditT || (list[0] && list[0].id));
+}
+function drawTList(){
+  const q = ($('#tq') && $('#tq').value.trim()) || '';
+  const list = [...DATA.tournaments]
+    .filter(t => !q || (t.name + t.pref + t.host + t.venue).includes(q))
+    .sort((a,b) => String(b.date).localeCompare(String(a.date)));
+  $('#tTable').innerHTML = `<thead><tr class="bg-navy text-white text-[11px] sticky top-0">
+      <th class="text-left px-3 py-2 w-24">開催日</th><th class="text-left px-3 py-2">大会名</th>
+      <th class="text-left px-3 py-2 w-16">格</th><th class="text-right px-3 py-2 w-16">結果</th></tr></thead>
+    <tbody>${list.map(t => `<tr class="border-b border-rule cursor-pointer hover:bg-neutral-50" data-t="${esc(t.id)}">
+      <td class="px-3 py-2 text-[11px] tnum">${esc(dotDate(t.date))}</td>
+      <td class="px-3 py-2"><div class="text-[13px] font-bold">${esc(t.name)}</div>
+        <div class="text-[11px] text-ink-mute">${esc(t.pref)}・${esc(t.host)}${t.published === false ? ' ・<span class="text-brand-red font-bold">非公開</span>' : ''}</div></td>
+      <td class="px-3 py-2">${gchip(t.grade)}</td>
+      <td class="px-3 py-2 text-right text-[11px]">${DATA.results.filter(r => r.tid === t.id).length || '—'}</td></tr>`).join('')}</tbody>`;
+  $$('#tTable [data-t]').forEach(tr => tr.addEventListener('click', () => drawTForm(tr.dataset.t)));
+}
+function drawTForm(id){
+  const t = DATA.tournaments.find(x => x.id === id);
+  admEditT = t ? t.id : null;
+  const b = t || { id:'', name:'', grade:'G4', date:AS, deadline:AS, pref:'東京', venue:'', host:'',
+                   evs:['シングルス'], cats:['フリー'], draw:24, fee:'2,000円', entryUrl:'', docUrl:'', published:true };
+  $('#tFormTitle').textContent = t ? '大会の編集' : '新しい大会';
+  $('#tFormId').textContent = t ? `ID ${t.id}` : '「この内容にする」で新しいIDが振られます';
+  $('#tForm').innerHTML =
+    field('大会名', `<input id="tfName" type="text" class="${INP}" value="${esc(b.name)}">`) +
+    field('グレード', selectHtml('tfGrade', GRADES, b.grade), `優勝 ${fmtN((S.points[b.grade]||{})['優勝'])} pt が基準になります`) +
+    field('開催日 / 締切', `<div class="flex gap-2 flex-wrap">
+      <input id="tfDate" type="date" class="${INP} max-w-[160px]" value="${esc(b.date)}">
+      <input id="tfDeadline" type="date" class="${INP} max-w-[160px]" value="${esc(b.deadline)}"></div>`) +
+    field('都道府県 / 会場', `<div class="flex gap-2 flex-wrap">${selectHtml('tfPref', PREFS, b.pref)}
+      <input id="tfVenue" type="text" class="${INP} max-w-[240px]" value="${esc(b.venue)}"></div>`) +
+    field('主催', `<input id="tfHost" type="text" class="${INP}" value="${esc(b.host)}">`) +
+    field('種目', checksHtml('tfEvs', ['シングルス','ダブルス','ミックスダブルス','BTラリー戦'], b.evs)) +
+    field('カテゴリ', checksHtml('tfCats', CATS, b.cats)) +
+    field('ドロー数 / 参加費', `<div class="flex gap-2 flex-wrap items-center">
+      <input id="tfDraw" type="number" min="4" class="${INP} max-w-[100px]" value="${esc(b.draw)}">
+      <input id="tfFee" type="text" class="${INP} max-w-[120px]" value="${esc(b.fee)}">
+      <span class="text-[11px] text-ink-mute">係数 ${drawCoef(S, b.draw).toFixed(2)}</span></div>`) +
+    field('申込フォームURL', `<input id="tfEntry" type="text" class="${INP}" value="${esc(b.entryUrl||'')}" placeholder="https://...">`) +
+    field('要項PDFのURL', `<input id="tfDoc" type="text" class="${INP}" value="${esc(b.docUrl||'')}" placeholder="https://drive.google.com/...">`,
+      'Googleドライブに置いたPDFの共有リンクを貼ってください。共有設定を「リンクを知っている全員」にしないと開けません。') +
+    field('公開', `<label class="inline-flex items-center gap-2 text-[13px]">
+      <input id="tfPub" type="checkbox"${b.published !== false ? ' checked' : ''}>サイトに表示する</label>`,
+      'チェックを外すと下書き扱いになり、サイトには出ません。');
+  $('#tDel').style.display = t ? '' : 'none';
+}
+function saveT(){
+  const v = id => $('#'+id).value.trim();
+  const boxes = n => $$(`input[name="${n}"]:checked`).map(b => b.value);
+  const o = { name:v('tfName'), grade:v('tfGrade'), date:v('tfDate'), deadline:v('tfDeadline'),
+              pref:v('tfPref'), venue:v('tfVenue'), host:v('tfHost'),
+              evs:boxes('tfEvs'), cats:boxes('tfCats'), draw:Number(v('tfDraw'))||0, fee:v('tfFee'),
+              entryUrl:v('tfEntry'), docUrl:v('tfDoc'), published:$('#tfPub').checked };
+  if (!o.name) return alert('大会名を入力してください。');
+  if (!o.date) return alert('開催日を入力してください。');
+  if (!o.evs.length || !o.cats.length) return alert('種目とカテゴリを1つ以上選んでください。');
+  if (admEditT) Object.assign(DATA.tournaments.find(x => x.id === admEditT), o);
+  else { o.id = nextId(DATA.tournaments, 'T', 4); DATA.tournaments.push(o); admEditT = o.id; }
+  markDirty(); applyData(DATA); drawTList(); drawTForm(admEditT);
+  toast('反映しました。忘れずに「保存する」を押してください。', 'warn');
+}
+function delT(){
+  const t = DATA.tournaments.find(x => x.id === admEditT); if (!t) return;
+  const n = DATA.results.filter(r => r.tid === t.id).length;
+  if (!confirm(`「${t.name}」を削除します。${n ? `この大会の結果 ${n} 件も消えます。` : ''}よろしいですか？`)) return;
+  DATA.tournaments = DATA.tournaments.filter(x => x.id !== t.id);
+  DATA.results = DATA.results.filter(r => r.tid !== t.id);
+  admEditT = null; markDirty(); applyData(DATA); admTournaments();
+}
+
+/* ===== 結果 ===== */
+function admResults(){
+  const pending = DATA.results.filter(r => r.status !== '承認済');
+  const groups = {};
+  pending.forEach(r => { const k = [r.tid,r.ev,r.cat,r.sex].join('|'); (groups[k] = groups[k]||[]).push(r); });
+  $('#admBody').innerHTML = `
+    <div class="${CARD} mb-6">
+      <h3 class="text-[17px] font-bold mb-1">承認キュー</h3>
+      <p class="text-[13px] text-ink-soft mb-4">承認するとランキングに反映されます。${pending.length ? `現在 <b>${pending.length}</b> 件が保留中です。` : ''}</p>
+      ${Object.keys(groups).length ? `<table class="w-full text-sm">
+        <thead><tr class="bg-navy text-white text-[11px]"><th class="text-left px-3 py-2 w-24">開催日</th>
+        <th class="text-left px-3 py-2">大会 / 種目</th><th class="text-left px-3 py-2 w-20">状態</th>
+        <th class="text-right px-3 py-2 w-16">人数</th><th class="px-3 py-2"></th></tr></thead>
+        <tbody>${Object.entries(groups).map(([k, arr]) => {
+          const [tid,ev,cat,sex] = k.split('|'); const t = T_BY_ID[tid] || {};
+          return `<tr class="border-b border-rule">
+            <td class="px-3 py-2.5 text-[11px] tnum">${esc(dotDate(t.date||''))}</td>
+            <td class="px-3 py-2.5"><div class="text-[13px] font-bold">${esc(t.name||tid)}</div>
+              <div class="text-[11px] text-ink-mute">${esc(ev)}・${esc(cat)}${sex!=='混合'?'・'+esc(sex):''}
+              ${arr[0].note ? '　⚠ '+esc(arr[0].note) : ''}</div></td>
+            <td class="px-3 py-2.5"><span class="text-[10.5px] font-bold bg-brand-red text-white px-2 py-0.5">${esc(arr[0].status)}</span></td>
+            <td class="px-3 py-2.5 text-right text-[11px]">${arr.length}</td>
+            <td class="px-3 py-2.5 text-right whitespace-nowrap">
+              <button class="${BTN_S} !px-3 !py-0.5" data-seek="${esc(k)}">中身</button>
+              <button class="${BTN_S} !px-3 !py-0.5 !border-navy !text-navy" data-okk="${esc(k)}">承認</button>
+              <button class="${BTN_S} !px-3 !py-0.5 !border-brand-red !text-brand-red" data-nok="${esc(k)}">削除</button></td></tr>`;
+        }).join('')}</tbody></table>`
+        : `<p class="py-10 text-center text-ink-mute text-sm">承認待ちの結果はありません。</p>`}
+    </div>
+
+    <div class="${CARD}">
+      <h3 class="text-[17px] font-bold mb-1">結果を登録する</h3>
+      <p class="text-[13px] text-ink-soft mb-4">大会と種目を選び、入賞者を指定してください。ポイントは自動で計算されます。</p>
+      ${field('大会', `<select id="eTour" class="${INP} max-w-[420px]"></select>`)}
+      ${field('種目 / カテゴリ / 性別', `<div class="flex gap-2 flex-wrap">
+        <select id="eEv" class="${INP} max-w-[170px]"></select>
+        <select id="eCat" class="${INP} max-w-[120px]"></select>
+        <select id="eSex" class="${INP} max-w-[110px]"></select></div>`)}
+      ${field('本戦ドロー数', `<div class="flex gap-3 items-center flex-wrap">
+        <input id="eDraw" type="number" min="4" value="24" class="${INP} max-w-[100px]">
+        <span id="eCoef" class="text-[11px] text-ink-mute"></span></div>`)}
+      ${field('入賞者', `<div id="ePlaces" class="grid gap-2" style="grid-template-columns:repeat(auto-fill,minmax(250px,1fr))"></div>`,
+        '名簿にいない選手は「選手」タブで先に登録してください。空欄の枠は登録されません。')}
+      <div class="flex gap-2.5 mt-5 flex-wrap items-center">
+        <button id="eSave" class="${BTN_S}">承認待ちとして登録</button>
+        <button id="eApprove" class="${BTN_P}">登録して承認する</button>
+        <span id="eMsg" class="text-xs text-ink-mute"></span></div>
+    </div>`;
+
+  $$('[data-okk]').forEach(b => b.addEventListener('click', () => {
+    const k = b.dataset.okk;
+    DATA.results.forEach(r => { if ([r.tid,r.ev,r.cat,r.sex].join('|') === k){ r.status = '承認済'; delete r.note; } });
+    markDirty(); applyData(DATA); admResults();
+    toast('承認しました。ランキングに反映されています。');
+  }));
+  $$('[data-nok]').forEach(b => b.addEventListener('click', () => {
+    if (!confirm('この結果を削除します。よろしいですか？')) return;
+    DATA.results = DATA.results.filter(r => [r.tid,r.ev,r.cat,r.sex].join('|') !== b.dataset.nok);
+    markDirty(); applyData(DATA); admResults();
+  }));
+  $$('[data-seek]').forEach(b => b.addEventListener('click', () => {
+    const [tid,ev,cat,sex] = b.dataset.seek.split('|');
+    const t = T_BY_ID[tid] || {};
+    const arr = DATA.results.filter(r => r.tid===tid && r.ev===ev && r.cat===cat && r.sex===sex)
+      .sort((x,y) => PLACES.indexOf(x.place) - PLACES.indexOf(y.place));
+    openModal(`<h3 class="text-[18px] font-bold pr-8">${esc(t.name||tid)}
+        <span class="block text-xs font-normal opacity-80 mt-1">${esc(ev)}・${esc(cat)}${sex!=='混合'?'・'+esc(sex):''}</span></h3>`,
+      `<table class="w-full text-sm"><thead><tr class="bg-navy text-white text-[11px]">
+        <th class="text-left px-3 py-2 w-24">成績</th><th class="text-left px-3 py-2">選手</th>
+        <th class="text-right px-3 py-2">付与pt</th></tr></thead><tbody>${arr.map(r => {
+        const p = P_BY_ID[r.pid] || {};
+        return `<tr class="border-b border-rule"><td class="px-3 py-2">${esc(r.place)}</td>
+          <td class="px-3 py-2"><b>${esc(p.name || r.pid)}</b>
+            <span class="block text-[11px] text-ink-mute">${esc(p.regno || r.pid)}・${esc(p.pref||'')}</span></td>
+          <td class="px-3 py-2 text-right font-bold text-navy tnum">${fmtN(awardedPoint(S, t.grade, r.place, r.draw || t.draw))}</td></tr>`;
+      }).join('')}</tbody></table>`);
+  }));
+
+  const past = DATA.tournaments.filter(t => t.date <= AS).sort((a,b) => b.date.localeCompare(a.date));
+  $('#eTour').innerHTML = past.map(t => `<option value="${esc(t.id)}">${esc(dotDate(t.date))}　${esc(t.name)}（${esc(t.grade)}）</option>`).join('');
+  ['eTour','eEv','eCat','eDraw'].forEach(id => $('#'+id).addEventListener('change', syncEntry));
+  $('#eSave').addEventListener('click', () => saveEntry(false));
+  $('#eApprove').addEventListener('click', () => saveEntry(true));
+  syncEntry();
+}
+function syncEntry(){
+  const t = DATA.tournaments.find(x => x.id === $('#eTour').value);
+  if (!t) return;
+  const keep = (sel, arr) => { const v = sel.value; sel.innerHTML = arr.map(o =>
+    `<option${o===v?' selected':''}>${esc(o)}</option>`).join(''); };
+  keep($('#eEv'), t.evs.filter(e => e !== 'BTラリー戦'));
+  keep($('#eCat'), t.cats);
+  const mixed = $('#eEv').value === 'ミックスダブルス';
+  $('#eSex').innerHTML = (mixed ? ['混合'] : SEXES).map(o => `<option>${esc(o)}</option>`).join('');
+  if (!Number($('#eDraw').value)) $('#eDraw').value = t.draw;
+  const draw = Number($('#eDraw').value) || t.draw;
+  $('#eCoef').textContent = `ドロー係数 ${drawCoef(S, draw).toFixed(2)}　（${t.grade} 優勝 ${fmtN(awardedPoint(S, t.grade, '優勝', draw))} pt）`;
+  const opts = '<option value="">— 選手を選ぶ —</option>' + [...DATA.players]
+    .filter(p => p.active !== false)
+    .sort((a,b) => String(a.name).localeCompare(String(b.name), 'ja'))
+    .map(p => `<option value="${esc(p.id)}">${esc(p.name)}（${esc(p.pref)}・${esc(p.sex)}）</option>`).join('');
+  const slots = [['優勝',1],['準優勝',1],['ベスト4',2],['ベスト8',4]];
+  let html = '';
+  slots.forEach(([place,n]) => { for (let i = 0; i < n; i++)
+    html += `<div class="flex gap-2 items-center border border-rule px-2.5 py-1.5 bg-white">
+      <span class="text-[11px] font-bold text-ink-soft w-16 shrink-0">${esc(place)}</span>
+      <select data-place="${esc(place)}" class="flex-1 min-w-0 text-[13px] border-0 bg-transparent">${opts}</select>
+      <span class="text-[12px] font-bold text-navy tnum w-12 text-right shrink-0">${fmtN(awardedPoint(S, t.grade, place, draw))}</span></div>`;
+  });
+  $('#ePlaces').innerHTML = html;
+}
+function saveEntry(approve){
+  const t = DATA.tournaments.find(x => x.id === $('#eTour').value);
+  const picks = $$('#ePlaces select').map(s => ({ pid:s.value, place:s.dataset.place })).filter(p => p.pid);
+  if (!picks.length) return toast('少なくとも1名は選んでください。', 'error');
+  const ids = picks.map(p => p.pid);
+  if (new Set(ids).size !== ids.length) return toast('同じ選手が複数の枠に入っています。', 'error');
+  const ev = $('#eEv').value, cat = $('#eCat').value, sex = $('#eSex').value;
+  const draw = Number($('#eDraw').value) || t.draw;
+  const dup = DATA.results.some(r => r.tid===t.id && r.ev===ev && r.cat===cat && r.sex===sex);
+  if (dup && !confirm('この大会・種目の結果はすでに登録されています。追加しますか？')) return;
+  picks.forEach(p => {
+    DATA.results.push({ id: nextId(DATA.results, 'R', 5), tid:t.id, ev, cat, sex, draw,
+      place:p.place, pid:p.pid, status: approve ? '承認済' : '承認待ち', submitted: todayStr(), note:'' });
+  });
+  markDirty(); applyData(DATA); admResults();
+  toast(approve ? '登録して承認しました。' : '承認待ちとして登録しました。');
+}
+
+/* ===== 選手 ===== */
+let admEditP = null;
+function admPlayers(){
+  $('#admBody').innerHTML = `<div class="grid lg:grid-cols-[1.1fr_.9fr] gap-6 items-start">
+    <div class="${CARD}">
+      <div class="flex gap-2.5 items-center flex-wrap mb-4">
+        <input id="pq" type="text" placeholder="氏名・かな・選手ID" class="${INP} max-w-[220px]">
+        <span class="text-xs text-ink-mute ml-auto">${DATA.players.length} 名</span>
+        <button id="pNew" class="${BTN_P}">＋ 新しい選手</button></div>
+      <div class="max-h-[560px] overflow-auto border border-rule"><table class="w-full text-sm" id="pTable"></table></div>
+    </div>
+    <div class="${CARD}"><h3 class="text-[17px] font-bold mb-1">選手の編集</h3>
+      <p class="text-[11px] text-ink-mute mb-3" id="pFormId"></p>
+      <div id="pForm"></div>
+      <div class="flex gap-2.5 mt-5 flex-wrap">
+        <button id="pSave" class="${BTN_P}">この内容にする</button>
+        <button id="pCancel" class="${BTN_S}">取り消し</button>
+        <button id="pDel" class="${BTN_D} ml-auto">削除</button></div></div></div>`;
+  $('#pq').addEventListener('input', drawPList);
+  $('#pNew').addEventListener('click', () => { admEditP = null; drawPForm(null); });
+  $('#pCancel').addEventListener('click', () => drawPForm(admEditP));
+  $('#pSave').addEventListener('click', saveP);
+  $('#pDel').addEventListener('click', delP);
+  drawPList(); drawPForm(admEditP || (DATA.players[0] && DATA.players[0].id));
+}
+function drawPList(){
+  const q = ($('#pq') && $('#pq').value.trim()) || '';
+  const list = DATA.players.filter(p => !q || (p.name + (p.kana||'') + p.id + (p.regno||'')).includes(q)).slice(0, 500);
+  $('#pTable').innerHTML = `<thead><tr class="bg-navy text-white text-[11px] sticky top-0">
+      <th class="text-left px-3 py-2">選手</th><th class="text-left px-3 py-2 w-20">所属</th>
+      <th class="text-right px-3 py-2 w-14">年齢</th><th class="text-right px-3 py-2 w-14">出場</th></tr></thead>
+    <tbody>${list.map(p => `<tr class="border-b border-rule cursor-pointer hover:bg-neutral-50" data-p="${esc(p.id)}">
+      <td class="px-3 py-2"><div class="text-[13.5px] font-bold">${esc(p.name)}</div>
+        <div class="text-[11px] text-ink-mute">${esc(p.regno || p.id)}</div></td>
+      <td class="px-3 py-2 text-[11px]">${esc(p.pref)}</td>
+      <td class="px-3 py-2 text-right text-[11px] tnum">${ageAt(p, AS)}</td>
+      <td class="px-3 py-2 text-right text-[11px] tnum">${DATA.results.filter(r => r.pid === p.id).length}</td></tr>`).join('')}</tbody>`;
+  $$('#pTable [data-p]').forEach(tr => tr.addEventListener('click', () => drawPForm(tr.dataset.p)));
+}
+function drawPForm(id){
+  const p = DATA.players.find(x => x.id === id);
+  admEditP = p ? p.id : null;
+  const b = p || { id:'', regno:'', name:'', kana:'', pref:'東京', sex:'男', birth:new Date().getFullYear()-30, active:true };
+  $('#pFormId').textContent = p ? `ID ${p.id}　出場 ${DATA.results.filter(r => r.pid === p.id).length} 件` : '「この内容にする」で新しいIDが振られます';
+  $('#pForm').innerHTML =
+    field('氏名', `<input id="pfName" type="text" class="${INP}" value="${esc(b.name)}">`) +
+    field('かな', `<input id="pfKana" type="text" class="${INP}" value="${esc(b.kana)}">`) +
+    field('選手ID（表示用）', `<input id="pfRegno" type="text" class="${INP} max-w-[220px]" value="${esc(b.regno)}">`, '協会の登録番号。空欄でも動きます。') +
+    field('所属 / 性別', `<div class="flex gap-2 flex-wrap">${selectHtml('pfPref', PREFS, b.pref)}${selectHtml('pfSex', ['男','女'], b.sex)}</div>`) +
+    field('生年', `<input id="pfBirth" type="number" class="${INP} max-w-[120px]" value="${esc(b.birth)}">`,
+      `年齢カテゴリの判定に使います（${CATS.map(c => c+' '+CAT_MIN_AGE[c]+'歳〜').join(' / ')}）`) +
+    field('登録状態', `<label class="inline-flex items-center gap-2 text-[13px]">
+      <input id="pfActive" type="checkbox"${b.active !== false ? ' checked':''}>現役（結果登録の候補に出す）</label>`);
+  $('#pDel').style.display = p ? '' : 'none';
+}
+function saveP(){
+  const v = id => $('#'+id).value.trim();
+  const o = { name:v('pfName'), kana:v('pfKana'), regno:v('pfRegno'), pref:v('pfPref'),
+              sex:v('pfSex'), birth:Number(v('pfBirth'))||1990, active:$('#pfActive').checked };
+  if (!o.name) return alert('氏名を入力してください。');
+  if (admEditP) Object.assign(DATA.players.find(x => x.id === admEditP), o);
+  else { o.id = nextId(DATA.players, 'P', 4); if (!o.regno) o.regno = o.id; DATA.players.push(o); admEditP = o.id; }
+  markDirty(); applyData(DATA); drawPList(); drawPForm(admEditP);
+  toast('反映しました。忘れずに「保存する」を押してください。', 'warn');
+}
+function delP(){
+  const p = DATA.players.find(x => x.id === admEditP); if (!p) return;
+  const n = DATA.results.filter(r => r.pid === p.id).length;
+  if (n) return alert(`${p.name} さんは ${n} 件の結果に登場するため削除できません。先に結果を修正してください。`);
+  if (!confirm(`${p.name} さんを削除します。よろしいですか？`)) return;
+  DATA.players = DATA.players.filter(x => x.id !== p.id);
+  admEditP = null; markDirty(); applyData(DATA); admPlayers();
+}
+
+/* ===== お知らせ ===== */
+let admEditN = null;
+function admNews(){
+  $('#admBody').innerHTML = `<div class="grid lg:grid-cols-[1fr_1fr] gap-6 items-start">
+    <div class="${CARD}">
+      <div class="flex items-center mb-4"><span class="text-xs text-ink-mute">${DATA.news.length} 件</span>
+        <button id="nNew" class="${BTN_P} ml-auto">＋ 新しいお知らせ</button></div>
+      <div class="max-h-[560px] overflow-auto border border-rule"><table class="w-full text-sm" id="nTable"></table></div></div>
+    <div class="${CARD}"><h3 class="text-[17px] font-bold mb-3">お知らせの編集</h3>
+      <div id="nForm"></div>
+      <div class="flex gap-2.5 mt-5 flex-wrap">
+        <button id="nSave" class="${BTN_P}">この内容にする</button>
+        <button id="nCancel" class="${BTN_S}">取り消し</button>
+        <button id="nDel" class="${BTN_D} ml-auto">削除</button></div></div></div>`;
+  $('#nNew').addEventListener('click', () => { admEditN = null; drawNForm(null); });
+  $('#nCancel').addEventListener('click', () => drawNForm(admEditN));
+  $('#nSave').addEventListener('click', saveN);
+  $('#nDel').addEventListener('click', () => {
+    const n = DATA.news.find(x => x.id === admEditN); if (!n) return;
+    if (!confirm(`「${n.title}」を削除します。よろしいですか？`)) return;
+    DATA.news = DATA.news.filter(x => x.id !== n.id); admEditN = null; markDirty(); admNews();
+  });
+  drawNList(); drawNForm(admEditN || (DATA.news[0] && DATA.news[0].id));
+}
+function drawNList(){
+  const list = [...DATA.news].sort((a,b) => String(b.date).localeCompare(String(a.date)));
+  $('#nTable').innerHTML = `<thead><tr class="bg-navy text-white text-[11px] sticky top-0">
+      <th class="text-left px-3 py-2 w-24">日付</th><th class="text-left px-3 py-2">タイトル</th></tr></thead>
+    <tbody>${list.map(n => `<tr class="border-b border-rule cursor-pointer hover:bg-neutral-50" data-n="${esc(n.id)}">
+      <td class="px-3 py-2 text-[11px] tnum">${esc(dotDate(n.date))}</td>
+      <td class="px-3 py-2"><div class="text-[13px] font-bold">${n.pinned?'★ ':''}${esc(n.title)}</div>
+        <div class="text-[11px] text-ink-mute">${esc(n.category||'')}${n.published === false ? ' ・非公開' : ''}</div></td></tr>`).join('')}</tbody>`;
+  $$('#nTable [data-n]').forEach(tr => tr.addEventListener('click', () => drawNForm(tr.dataset.n)));
+}
+function drawNForm(id){
+  const n = DATA.news.find(x => x.id === id);
+  admEditN = n ? n.id : null;
+  const b = n || { id:'', date:todayStr(), category:'お知らせ', title:'', body:'', url:'', pinned:false, published:true };
+  $('#nForm').innerHTML =
+    field('日付', `<input id="nfDate" type="date" class="${INP} max-w-[170px]" value="${esc(b.date)}">`) +
+    field('分類', selectHtml('nfCat', ['お知らせ','大会情報','大会結果','ランキング','重要'], b.category)) +
+    field('タイトル', `<input id="nfTitle" type="text" class="${INP}" value="${esc(b.title)}">`) +
+    field('本文', `<textarea id="nfBody" rows="6" class="${INP}">${esc(b.body)}</textarea>`) +
+    field('添付URL', `<input id="nfUrl" type="text" class="${INP}" value="${esc(b.url||'')}" placeholder="https://drive.google.com/...">`,
+      'GoogleドライブのPDFなど。共有設定を「リンクを知っている全員」にしてください。') +
+    field('表示', `<div class="flex gap-4 flex-wrap">
+      <label class="inline-flex items-center gap-2 text-[13px]"><input id="nfPin" type="checkbox"${b.pinned?' checked':''}>先頭に固定</label>
+      <label class="inline-flex items-center gap-2 text-[13px]"><input id="nfPub" type="checkbox"${b.published!==false?' checked':''}>公開する</label></div>`);
+  $('#nDel').style.display = n ? '' : 'none';
+}
+function saveN(){
+  const v = id => $('#'+id).value.trim();
+  const o = { date:v('nfDate'), category:v('nfCat'), title:v('nfTitle'), body:v('nfBody'),
+              url:v('nfUrl'), pinned:$('#nfPin').checked, published:$('#nfPub').checked };
+  if (!o.title) return alert('タイトルを入力してください。');
+  if (admEditN) Object.assign(DATA.news.find(x => x.id === admEditN), o);
+  else { o.id = nextId(DATA.news, 'N', 4); DATA.news.push(o); admEditN = o.id; }
+  markDirty(); drawNList(); drawNForm(admEditN);
+  toast('反映しました。忘れずに「保存する」を押してください。', 'warn');
+}
+
+/* ===== 配点・集計 ===== */
+function admSettings(){
+  const cs = [...S.drawCoef].sort((a,b) => b.min - a.min);
+  const td = 'px-3 py-2 border-b border-rule';
+  $('#admBody').innerHTML = `<div class="${CARD}">
+    <div class="bg-paper border-l-4 border-brand-red px-5 py-4 mb-6 text-[13.5px] text-ink-soft leading-relaxed">
+      <span class="block text-[11.5px] font-bold tracking-widest text-brand-red mb-1.5">注意</span>
+      ここを変更すると<b class="text-ink">過去の結果もさかのぼって再計算</b>されます。
+      年度の途中で変えると順位が大きく動くので、変更は年度替わりを推奨します。</div>
+
+    <h3 class="text-[17px] font-bold mb-2">集計の基準</h3>
+    ${field('集計基準日', `<input id="cAsOf" type="date" class="${INP} max-w-[170px]" value="${esc(S.asOf)}">`,
+      '空欄にすると、サイトを開いた日を基準に集計します。')}
+    ${field('集計期間', `<div class="flex items-center gap-2">直近 <input id="cWeeks" type="number" class="${INP} max-w-[90px]" value="${S.periodWeeks}"> 週</div>`)}
+    ${field('有効大会数', `<div class="flex items-center gap-2">上位 <input id="cTopN" type="number" class="${INP} max-w-[90px]" value="${S.topN}"> 大会</div>`)}
+    ${field('下位グレードの上限', `<div class="flex items-center gap-2">${esc((S.lowGrades||[]).join('・'))} は合わせて
+      <input id="cCap" type="number" class="${INP} max-w-[90px]" value="${S.lowGradeCap}"> 大会まで</div>`)}
+    ${field('掲載条件', `<div class="flex items-center gap-2">期間内に <input id="cMin" type="number" class="${INP} max-w-[90px]" value="${S.minPlays}"> 大会以上の出場</div>`)}
+
+    <h3 class="text-[17px] font-bold mt-8 mb-2">配点表</h3>
+    <table class="w-full text-sm"><thead><tr class="bg-navy text-white text-[11px]">
+      <th class="text-left px-3 py-2.5">成績</th>${GRADES.map(g => `<th class="text-right px-3 py-2.5">${g} ${esc(GL[g]||'')}</th>`).join('')}</tr></thead>
+      <tbody>${PLACES.map(pl => `<tr><td class="${td}">${esc(pl)}</td>${GRADES.map(g =>
+        `<td class="${td} text-right"><input type="number" data-pt="${g}|${esc(pl)}" value="${(S.points[g]||{})[pl]||0}"
+          class="border border-rule px-2 py-1 text-[13px] w-24 text-right tnum"></td>`).join('')}</tr>`).join('')}</tbody></table>
+
+    <h3 class="text-[17px] font-bold mt-8 mb-2">ドロー係数</h3>
+    <table class="w-full text-sm max-w-[420px]"><thead><tr class="bg-navy text-white text-[11px]">
+      <th class="text-left px-3 py-2.5">本戦ドロー数（以上）</th><th class="text-right px-3 py-2.5 w-32">係数</th></tr></thead>
+      <tbody>${cs.map((c,i) => `<tr><td class="${td}">
+        <input type="number" data-cmin="${i}" value="${c.min}" class="border border-rule px-2 py-1 text-[13px] w-24"> 名以上</td>
+        <td class="${td} text-right"><input type="number" step="0.05" data-ccoef="${i}" value="${c.coef}"
+          class="border border-rule px-2 py-1 text-[13px] w-24 text-right tnum"></td></tr>`).join('')}</tbody></table>
+
+    <div class="flex gap-2.5 mt-6 items-center flex-wrap">
+      <button id="cApply" class="${BTN_P}">設定を反映して再計算</button>
+      <span class="text-xs text-ink-mute">反映後、上部の「保存する」で確定します。</span></div></div>`;
+  $('#cApply').addEventListener('click', () => {
+    S.asOf = $('#cAsOf').value || todayStr();
+    S.periodWeeks = Number($('#cWeeks').value) || 52;
+    S.topN = Number($('#cTopN').value) || 6;
+    S.lowGradeCap = Number($('#cCap').value);
+    S.minPlays = Number($('#cMin').value) || 1;
+    $$('[data-pt]').forEach(i => { const [g,pl] = i.dataset.pt.split('|'); S.points[g][pl] = Number(i.value) || 0; });
+    const arr = [...S.drawCoef].sort((a,b) => b.min - a.min);
+    $$('[data-cmin]').forEach(i => arr[Number(i.dataset.cmin)].min = Number(i.value));
+    $$('[data-ccoef]').forEach(i => arr[Number(i.dataset.ccoef)].coef = Number(i.value));
+    S.drawCoef = arr;
+    DATA.content.settings = S;
+    markDirty(); applyData(DATA); admSettings();
+    toast('全期間を再計算しました。');
+  });
+}
+
+/* ===== サイト文言 ===== */
+function admSite(){
+  const s = DATA.content.site;
+  $('#admBody').innerHTML = `<div class="${CARD} max-w-[860px]">
+    <h3 class="text-[17px] font-bold mb-1">サイトの文言</h3>
+    <p class="text-[13px] text-ink-soft mb-4">トップページやヘッダーに出る文字を変えられます。</p>
+    ${field('組織名', `<input id="siOrg" type="text" class="${INP}" value="${esc(s.orgName)}">`)}
+    ${field('サイト名', `<input id="siName" type="text" class="${INP}" value="${esc(s.siteName)}">`)}
+    ${field('英字ラベル', `<input id="siTag" type="text" class="${INP}" value="${esc(s.tagline)}">`)}
+    ${field('上部の注意バー', `<input id="siNotice" type="text" class="${INP}" value="${esc(s.noticeBar||'')}">`,
+      '空欄にするとバーごと消えます。本番公開のときは空にしてください。')}
+    ${field('見出し', `<textarea id="siHero" rows="3" class="${INP}">${esc(s.heroTitle)}</textarea>`, '改行するとサイト上でも改行されます。')}
+    ${field('リード文', `<textarea id="siLead" rows="5" class="${INP}">${esc(s.heroLead)}</textarea>`)}
+    ${field('問い合わせ表記', `<input id="siContact" type="text" class="${INP}" value="${esc(s.contact||'')}">`)}
+    <div class="flex gap-2.5 mt-5 items-center flex-wrap">
+      <button id="siApply" class="${BTN_P}">反映する</button>
+      <span class="text-xs text-ink-mute">反映後、上部の「保存する」で確定します。</span></div></div>`;
+  $('#siApply').addEventListener('click', () => {
+    Object.assign(DATA.content.site, {
+      orgName:$('#siOrg').value, siteName:$('#siName').value, tagline:$('#siTag').value,
+      noticeBar:$('#siNotice').value, heroTitle:$('#siHero').value,
+      heroLead:$('#siLead').value, contact:$('#siContact').value
+    });
+    markDirty(); renderHome();
+    toast('反映しました。忘れずに「保存する」を押してください。');
+  });
+}
+</script>
+
+<script>
+/* =====================================================================
+   起動
+   ===================================================================== */
+async function boot(){
+  buildNav();
+  const d = await loadData();
+  applyData(d);
+  buildEventFilters();
+  buildRankFilters();
+  renderHome(); renderMonthChart(); renderNews(); renderAbout();
+  renderEvents(true); renderRanking(true); renderResults(true);
+  initAuth();
+  if (window.lucide) try { lucide.createIcons(); } catch(e){}
+  if (DATA_SOURCE === 'cache') toast('サーバーにつながらないため、前回読み込んだ内容を表示しています。', 'warn');
+}
+boot();
+</script>
+</body>
+</html>
