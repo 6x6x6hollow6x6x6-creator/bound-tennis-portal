@@ -13,7 +13,7 @@
 /* ↓↓↓ ここだけ書き換えてください ↓↓↓ ------------------------------- */
 
 /** Google Cloud Console で作った OAuth クライアントID（index.html と同じ値） */
-var GOOGLE_CLIENT_ID = 'ここにクライアントIDを貼る.apps.googleusercontent.com';
+var GOOGLE_CLIENT_ID = '576378291172-vukiiep7ohj6t7e59be58ioh09pi87gp.apps.googleusercontent.com';
 
 /** 書き込みを許可するGoogleアカウント。ここに無いアカウントは保存できません */
 var ALLOWED_EMAILS = [
