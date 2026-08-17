@@ -122,8 +122,12 @@ function setup(){
   var first = ss.getSheetByName('シート1') || ss.getSheetByName('Sheet1');
   if (first && ss.getSheets().length > 1) ss.deleteSheet(first);
 
-  SpreadsheetApp.getUi().alert('セットアップが完了しました。\n\n' +
-    'シート：' + Object.keys(SCHEMA).map(function(t){ return SCHEMA[t].sheet; }).join('・') + '・' + CONTENT_SHEET);
+  /* getUi().alert() は使わないこと。ダイアログはスプレッドシート側のタブに出るため、
+     エディタから ▶ 実行 したときは誰もOKを押せず、6分の上限まで待ち続けて
+     「Exceeded maximum execution time」で落ちる。ログなら実行環境を選ばない */
+  var names = Object.keys(SCHEMA).map(function(t){ return SCHEMA[t].sheet; }).join('・') + '・' + CONTENT_SHEET;
+  Logger.log('セットアップが完了しました。シート：' + names);
+  return 'セットアップが完了しました。シート：' + names;
 }
 
 
