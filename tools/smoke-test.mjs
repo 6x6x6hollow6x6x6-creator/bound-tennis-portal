@@ -7,6 +7,11 @@
  * index.html をブラウザで開いて、主要な画面と管理画面のひと通りを触る。
  * CDNには実際に取りに行くので、ネットにつながる環境で実行すること。
  * （CDNに出られない環境では STUB_CDN=1 を付けると、見た目は崩れるが動作だけ確認できる）
+ *
+ * これは画面の回帰テストなので、Apps Script へは行かせず、必ずコード内の
+ * DEFAULT_DATA で動かす。本番のスプレッドシートが空だったり中身が入れ替わったりしても
+ * テストの結果が変わらないようにするため。
+ * API との疎通を見たいときは USE_API=1 を付ける（件数系の項目は落ちることがある）。
  */
 import { chromium } from 'playwright';
 import path from 'path';
@@ -15,6 +20,7 @@ import { fileURLToPath } from 'url';
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const FILE = 'file://' + path.join(HERE, '..', 'index.html');
 const STUB = process.env.STUB_CDN === '1';
+const USE_API = process.env.USE_API === '1';
 
 const problems = [];
 const check = (label, ok, detail) => {
@@ -27,8 +33,17 @@ const browser = await chromium.launch(
   process.env.PW_CHROMIUM ? { executablePath: process.env.PW_CHROMIUM } : {});
 const page = await browser.newPage({ viewport: { width: 1360, height: 1000 } });
 page.on('pageerror', e => problems.push('JSエラー: ' + e.message));
-page.on('console', m => { if (m.type() === 'error') problems.push('コンソールエラー: ' + m.text()); });
+page.on('console', m => {
+  if (m.type() !== 'error') return;
+  /* 上で意図的に止めた Apps Script へのリクエストの分は数えない */
+  if (!USE_API && (m.location()?.url || '').includes('script.google.com')) return;
+  problems.push('コンソールエラー: ' + m.text());
+});
 page.on('dialog', d => d.accept());
+
+/* Apps Script を止める。フロントは3段フォールバックなので DEFAULT_DATA まで落ちてくれる
+   （新しいブラウザコンテキストなので localStorage のキャッシュも無い） */
+if (!USE_API) await page.route('https://script.google.com/**', r => r.abort());
 
 if (STUB){
   await page.route('https://cdn.tailwindcss.com*', r =>
