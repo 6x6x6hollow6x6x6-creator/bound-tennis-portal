@@ -65,10 +65,11 @@ tailwind.config = {
         <span id="hdTag" class="block text-[11px] font-bold text-brand-red tracking-widest"></span>
       </span>
     </a>
-    <nav id="mainNav" class="ml-auto hidden md:flex gap-0.5"></nav>
-    <button id="menuBtn" class="md:hidden ml-auto w-10 h-10 rounded-full bg-navy text-white text-base" aria-label="メニュー">•••</button>
+    <!-- md(768px)では6項目が入りきらず項目名が2行に割れるので、切り替えは lg(1024px) で行う -->
+    <nav id="mainNav" class="ml-auto hidden lg:flex gap-0.5"></nav>
+    <button id="menuBtn" class="lg:hidden ml-auto w-10 h-10 rounded-full bg-navy text-white text-base" aria-label="メニュー">•••</button>
   </div>
-  <nav id="drawer" class="md:hidden bg-white border-t border-rule" hidden></nav>
+  <nav id="drawer" class="lg:hidden bg-white border-t border-rule" hidden></nav>
 </header>
 
 <main class="relative z-10 max-w-[1180px] mx-auto px-6 pb-20">
@@ -135,7 +136,7 @@ tailwind.config = {
       <p class="text-[13.5px] text-ink-soft mb-5">都道府県協会・地区協会・クラブ主催の公認大会を横断して検索できます。行をクリックすると要項と獲得ポイントが開きます。</p>
       <div class="flex gap-4 flex-wrap items-center py-4 border-b border-rule" id="evFilters"></div>
       <div class="flex gap-3 flex-wrap items-center py-4">
-        <span class="text-[11.5px] font-bold text-ink-soft tracking-wider">グレード</span>
+        <span class="text-[11.5px] font-bold text-ink-soft tracking-wider whitespace-nowrap">グレード</span>
         <div class="flex gap-1.5 flex-wrap" id="evGrades"></div>
         <button data-status="open" aria-pressed="false" class="chip rounded-full border border-rule px-4 py-1 text-[12.5px] font-bold text-ink-soft">受付中のみ</button>
         <span id="evCount" class="ml-auto text-xs text-ink-mute"></span>
@@ -154,10 +155,10 @@ tailwind.config = {
     </div>
     <div class="bg-white px-5 sm:px-9 py-8">
       <div class="flex gap-5 flex-wrap items-center py-4 border-b border-rule">
-        <div class="flex items-center gap-2"><span class="text-[11.5px] font-bold text-ink-soft tracking-wider">種目</span><div class="flex gap-1.5" id="rEvent"></div></div>
-        <div class="flex items-center gap-2"><span class="text-[11.5px] font-bold text-ink-soft tracking-wider">性別</span><div class="flex gap-1.5" id="rSex"></div></div>
-        <div class="flex items-center gap-2"><span class="text-[11.5px] font-bold text-ink-soft tracking-wider">カテゴリ</span><div class="flex gap-1.5" id="rCat"></div></div>
-        <div class="flex items-center gap-2"><span class="text-[11.5px] font-bold text-ink-soft tracking-wider">所属</span>
+        <div class="flex items-center gap-2"><span class="text-[11.5px] font-bold text-ink-soft tracking-wider whitespace-nowrap">種目</span><div class="flex gap-1.5 flex-wrap" id="rEvent"></div></div>
+        <div class="flex items-center gap-2"><span class="text-[11.5px] font-bold text-ink-soft tracking-wider whitespace-nowrap">性別</span><div class="flex gap-1.5 flex-wrap" id="rSex"></div></div>
+        <div class="flex items-center gap-2"><span class="text-[11.5px] font-bold text-ink-soft tracking-wider whitespace-nowrap">カテゴリ</span><div class="flex gap-1.5 flex-wrap" id="rCat"></div></div>
+        <div class="flex items-center gap-2"><span class="text-[11.5px] font-bold text-ink-soft tracking-wider whitespace-nowrap">所属</span>
           <select id="rPref" class="border border-rule px-2 py-1.5 text-[13px] bg-white"><option value="">全国</option></select></div>
         <input id="rQ" type="text" placeholder="選手名で探す" class="ml-auto border border-rule px-3 py-1.5 text-[13px] w-48">
       </div>
@@ -176,9 +177,9 @@ tailwind.config = {
     </div>
     <div class="bg-white px-5 sm:px-9 py-8">
       <div class="flex gap-4 flex-wrap items-center py-4 border-b border-rule">
-        <div class="flex items-center gap-2"><span class="text-[11.5px] font-bold text-ink-soft tracking-wider">都道府県</span>
+        <div class="flex items-center gap-2"><span class="text-[11.5px] font-bold text-ink-soft tracking-wider whitespace-nowrap">都道府県</span>
           <select id="sPref" class="border border-rule px-2 py-1.5 text-[13px] bg-white"><option value="">すべて</option></select></div>
-        <div class="flex items-center gap-2"><span class="text-[11.5px] font-bold text-ink-soft tracking-wider">グレード</span>
+        <div class="flex items-center gap-2"><span class="text-[11.5px] font-bold text-ink-soft tracking-wider whitespace-nowrap">グレード</span>
           <select id="sGrade" class="border border-rule px-2 py-1.5 text-[13px] bg-white"><option value="">すべて</option></select></div>
         <input id="sQ" type="text" placeholder="大会名で探す" class="border border-rule px-3 py-1.5 text-[13px] w-48">
         <span id="sCount" class="ml-auto text-xs text-ink-mute"></span>
@@ -620,7 +621,7 @@ function go(v){
 }
 function buildNav(){
   $('#mainNav').innerHTML = NAV.map(([v,l]) =>
-    `<button class="nav-a relative text-[13px] font-bold tracking-wide px-4 py-2 text-ink-soft hover:text-navy" data-nav="${v}">${esc(l)}</button>`).join('');
+    `<button class="nav-a relative text-[13px] font-bold tracking-wide whitespace-nowrap px-4 py-2 text-ink-soft hover:text-navy" data-nav="${v}">${esc(l)}</button>`).join('');
   $('#drawer').innerHTML = NAV.map(([v,l]) =>
     `<button class="w-full text-left px-6 py-3.5 border-b border-rule text-sm font-bold" data-nav="${v}">${esc(l)}</button>`).join('');
   $('#footNav').innerHTML = NAV.slice(1).map(([v,l]) =>
@@ -672,7 +673,7 @@ document.addEventListener('click', e => {
 let evShown = 20;
 function buildEventFilters(){
   const sel = (id, label, opts) =>
-    `<div class="flex items-center gap-2"><span class="text-[11.5px] font-bold text-ink-soft tracking-wider">${label}</span>
+    `<div class="flex items-center gap-2"><span class="text-[11.5px] font-bold text-ink-soft tracking-wider whitespace-nowrap">${label}</span>
       <select id="${id}" class="border border-rule px-2 py-1.5 text-[13px] bg-white"><option value="">すべて</option>
       ${opts.map(o => `<option>${esc(o)}</option>`).join('')}</select></div>`;
   $('#evFilters').innerHTML =
@@ -682,7 +683,7 @@ function buildEventFilters(){
     sel('fCat','カテゴリ', CATS) +
     sel('fEvent','種目', [...new Set(DATA.tournaments.flatMap(t => t.evs))]) +
     `<input id="fQ" type="text" placeholder="大会名・会場・主催" class="border border-rule px-3 py-1.5 text-[13px] w-52">
-     <div class="flex items-center gap-2 ml-auto"><span class="text-[11.5px] font-bold text-ink-soft tracking-wider">並び</span>
+     <div class="flex items-center gap-2 ml-auto"><span class="text-[11.5px] font-bold text-ink-soft tracking-wider whitespace-nowrap">並び</span>
        <select id="fSort" class="border border-rule px-2 py-1.5 text-[13px] bg-white">
          <option value="date">開催日が近い順</option><option value="deadline">締切が近い順</option>
          <option value="grade">グレードが高い順</option><option value="past">過去の大会（新しい順）</option>
@@ -816,7 +817,7 @@ function rkey(){
 }
 function buildRankFilters(){
   const chips = (id, arr, label) => $('#'+id).innerHTML = arr.map((v,i) =>
-    `<button class="chip rounded-full border px-4 py-1 text-[12.5px] font-bold ${i===0?'bg-navy text-white border-navy':'border-rule text-ink-soft'}"
+    `<button class="chip rounded-full border px-4 py-1 text-[12.5px] font-bold whitespace-nowrap ${i===0?'bg-navy text-white border-navy':'border-rule text-ink-soft'}"
       data-v="${esc(v)}" aria-pressed="${i===0}">${esc(label ? label(v) : v)}</button>`).join('');
   const evs = EVENTS_LIST.filter(e => DATA.results.some(r => r.ev === e));
   chips('rEvent', evs.length ? evs : EVENTS_LIST, v => v === 'ミックスダブルス' ? 'ミックス' : v);
@@ -876,7 +877,8 @@ function renderRanking(reset){
     $('#rankMore').hidden = true; return;
   }
   const page = rows.slice(0, rkShown);
-  t.innerHTML = `<thead><tr class="bg-navy text-white text-[11px] tracking-wider">
+  /* 見出しは短いので、狭い画面でも1文字ずつ折り返させない */
+  t.innerHTML = `<thead><tr class="bg-navy text-white text-[11px] tracking-wider whitespace-nowrap">
       <th class="text-left px-3 py-2.5">順位</th><th class="text-left px-2 py-2.5 w-11">変動</th>
       <th class="text-left px-3 py-2.5">選手</th><th class="text-left px-3 py-2.5 hidden md:table-cell">所属</th>
       <th class="text-right px-3 py-2.5">BTP</th><th class="text-right px-3 py-2.5 hidden md:table-cell">有効/出場</th>
@@ -890,7 +892,7 @@ function renderRanking(reset){
       <td class="px-3 py-3 text-right text-[17px] font-bold text-navy tnum">${fmtN(r.pts)}</td>
       <td class="px-3 py-3 text-right tnum hidden md:table-cell">${r.counted.length} / ${r.plays}</td>
       <td class="px-3 py-3 hidden lg:table-cell">${gchip(r.bestHigh.grade)} ${esc(r.bestHigh.place)}</td>
-      <td class="px-3 py-3 text-right"><button class="rounded-full border border-rule px-3 py-0.5 text-[11.5px] font-bold text-ink-soft hover:border-navy hover:text-navy" data-exp="${esc(r.pid)}">内訳</button></td>
+      <td class="px-3 py-3 text-right"><button class="rounded-full border border-rule px-3 py-0.5 text-[11.5px] font-bold text-ink-soft whitespace-nowrap hover:border-navy hover:text-navy" data-exp="${esc(r.pid)}">内訳</button></td>
     </tr>`).join('')}</tbody>`;
   $('#rankMore').hidden = rows.length <= rkShown;
 
@@ -1171,6 +1173,9 @@ function renderAbout(){
   const cs = [...(S.drawCoef||[])].sort((x,y) => y.min - x.min);
   const th = 'bg-navy text-white text-[11px] tracking-wider';
   const td = 'px-3 py-2 border-b border-rule';
+  /* スマホ幅では列を潰さず表ごと横スクロールさせる（潰すと本文が1文字ずつ折り返して読めなくなる） */
+  const scr = t => `<div class="overflow-x-auto">${t}</div>`;
+  const tbl = 'w-full min-w-[560px] text-sm';
   $('#aboutBody').innerHTML = `
     <p class="text-[13.5px] text-ink-soft mb-5">${esc(a.intro)}</p>
     <div class="bg-paper border-l-4 border-brand-red px-5 py-4 my-5 text-[13.5px] text-ink-soft leading-relaxed">
@@ -1179,23 +1184,23 @@ function renderAbout(){
     </div>
 
     <h3 class="text-lg font-bold mt-8 mb-2.5 pl-3 border-l-4 border-navy tracking-wide">1. 大会グレード</h3>
-    <table class="w-full text-sm"><thead><tr class="${th}"><th class="text-left px-3 py-2.5 w-44">グレード</th>
+    ${scr(`<table class="${tbl}"><thead><tr class="${th}"><th class="text-left px-3 py-2.5 w-44">グレード</th>
       <th class="text-left px-3 py-2.5">対象大会の目安</th><th class="text-right px-3 py-2.5 w-24">登録数</th></tr></thead>
       <tbody>${GRADES.map(g => `<tr><td class="${td}">${gchip(g)}</td>
         <td class="${td}">${esc((a.gradeNotes||{})[g] || '')}</td>
-        <td class="${td} text-right tnum">${DATA.tournaments.filter(t => t.grade === g).length}</td></tr>`).join('')}</tbody></table>
+        <td class="${td} text-right tnum">${DATA.tournaments.filter(t => t.grade === g).length}</td></tr>`).join('')}</tbody></table>`)}
 
     <h3 class="text-lg font-bold mt-8 mb-2.5 pl-3 border-l-4 border-navy tracking-wide">2. 配点表</h3>
-    <table class="w-full text-sm"><thead><tr class="${th}"><th class="text-left px-3 py-2.5">成績</th>
+    ${scr(`<table class="${tbl}"><thead><tr class="${th}"><th class="text-left px-3 py-2.5">成績</th>
       ${GRADES.map(g => `<th class="text-right px-3 py-2.5">${g}</th>`).join('')}</tr></thead>
       <tbody>${PLACES.map(pl => `<tr><td class="${td}">${esc(pl)}</td>
-        ${GRADES.map(g => `<td class="${td} text-right tnum">${fmtN((S.points[g]||{})[pl])}</td>`).join('')}</tr>`).join('')}</tbody></table>
+        ${GRADES.map(g => `<td class="${td} text-right tnum">${fmtN((S.points[g]||{})[pl])}</td>`).join('')}</tr>`).join('')}</tbody></table>`)}
     <p class="text-xs text-ink-mute mt-2.5">この表の数値に、下のドロー係数を掛けたものが実際の付与ポイントです。</p>
 
     <h4 class="text-sm font-bold mt-6 mb-1.5">ドロー係数</h4>
-    <table class="w-full text-sm"><thead><tr class="${th}"><th class="text-left px-3 py-2.5">本戦ドロー数</th>
-      ${cs.map((c,i) => `<th class="text-right px-3 py-2.5">${i===0 ? c.min+'名以上' : c.min+'〜'+(cs[i-1].min-1)+'名'}</th>`).join('')}</tr></thead>
-      <tbody><tr><td class="${td}">係数</td>${cs.map(c => `<td class="${td} text-right tnum">${c.coef.toFixed(2)}</td>`).join('')}</tr></tbody></table>
+    ${scr(`<table class="${tbl}"><thead><tr class="${th}"><th class="text-left px-3 py-2.5 whitespace-nowrap">本戦ドロー数</th>
+      ${cs.map((c,i) => `<th class="text-right px-3 py-2.5 whitespace-nowrap">${i===0 ? c.min+'名以上' : c.min+'〜'+(cs[i-1].min-1)+'名'}</th>`).join('')}</tr></thead>
+      <tbody><tr><td class="${td}">係数</td>${cs.map(c => `<td class="${td} text-right tnum">${c.coef.toFixed(2)}</td>`).join('')}</tr></tbody></table>`)}
 
     <h3 class="text-lg font-bold mt-8 mb-2.5 pl-3 border-l-4 border-navy tracking-wide">3. 集計ルール</h3>
     <ul class="list-disc pl-6 text-sm text-ink-soft leading-8 space-y-1">
@@ -1530,7 +1535,7 @@ function admResults(){
       <p class="text-[13px] text-ink-soft mb-4">承認するとランキングに反映されます。${pending.length ? `現在 <b>${pending.length}</b> 件が保留中です。` : ''}</p>
       ${Object.keys(groups).length ? `<table class="w-full text-sm">
         <thead><tr class="bg-navy text-white text-[11px]"><th class="text-left px-3 py-2 w-24">開催日</th>
-        <th class="text-left px-3 py-2">大会 / 種目</th><th class="text-left px-3 py-2 w-20">状態</th>
+        <th class="text-left px-3 py-2">大会 / 種目</th><th class="text-left px-3 py-2 w-24">状態</th>
         <th class="text-right px-3 py-2 w-16">人数</th><th class="px-3 py-2"></th></tr></thead>
         <tbody>${Object.entries(groups).map(([k, arr]) => {
           const [tid,ev,cat,sex] = k.split('|'); const t = T_BY_ID[tid] || {};
@@ -1539,7 +1544,7 @@ function admResults(){
             <td class="px-3 py-2.5"><div class="text-[13px] font-bold">${esc(t.name||tid)}</div>
               <div class="text-[11px] text-ink-mute">${esc(ev)}・${esc(cat)}${sex!=='混合'?'・'+esc(sex):''}
               ${arr[0].note ? '　⚠ '+esc(arr[0].note) : ''}</div></td>
-            <td class="px-3 py-2.5"><span class="text-[10.5px] font-bold bg-brand-red text-white px-2 py-0.5">${esc(arr[0].status)}</span></td>
+            <td class="px-3 py-2.5"><span class="inline-block text-[10.5px] font-bold bg-brand-red text-white px-2 py-0.5 whitespace-nowrap">${esc(arr[0].status)}</span></td>
             <td class="px-3 py-2.5 text-right text-[11px]">${arr.length}</td>
             <td class="px-3 py-2.5 text-right whitespace-nowrap">
               <button class="${BTN_S} !px-3 !py-0.5" data-seek="${esc(k)}">中身</button>
@@ -1682,7 +1687,7 @@ function drawPList(){
     <tbody>${list.map(p => `<tr class="border-b border-rule cursor-pointer hover:bg-neutral-50" data-p="${esc(p.id)}">
       <td class="px-3 py-2"><div class="text-[13.5px] font-bold">${esc(p.name)}</div>
         <div class="text-[11px] text-ink-mute">${esc(p.regno || p.id)}</div></td>
-      <td class="px-3 py-2 text-[11px]">${esc(p.pref)}</td>
+      <td class="px-3 py-2 text-[11px] whitespace-nowrap">${esc(p.pref)}</td>
       <td class="px-3 py-2 text-right text-[11px] tnum">${ageAt(p, AS)}</td>
       <td class="px-3 py-2 text-right text-[11px] tnum">${DATA.results.filter(r => r.pid === p.id).length}</td></tr>`).join('')}</tbody>`;
   $$('#pTable [data-p]').forEach(tr => tr.addEventListener('click', () => drawPForm(tr.dataset.p)));

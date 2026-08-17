@@ -17,7 +17,7 @@ var GOOGLE_CLIENT_ID = 'ここにクライアントIDを貼る.apps.googleuserco
 
 /** 書き込みを許可するGoogleアカウント。ここに無いアカウントは保存できません */
 var ALLOWED_EMAILS = [
-  'ここに管理者のメールアドレス@gmail.com'
+  '6x6x6hollow6x6x6@gmail.com'
 ];
 
 /* ↑↑↑ ここまで ↑↑↑ -------------------------------------------------- */
