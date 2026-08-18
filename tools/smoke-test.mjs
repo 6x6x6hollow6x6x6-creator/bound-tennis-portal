@@ -210,6 +210,31 @@ check('古い成績が減衰する', decay.直近 === 1 && decay.古い < 1,
   `10週前 ×${decay.直近} / 60週前 ×${decay.古い}`);
 check('減衰が集計に反映される', decay.減衰が適用された);
 
+/* カテゴリ跨ぎ。バウンドテニスでは加齢でクラスが上がるほか、人数の都合で
+   シニアの選手がミドルに出ることもある。どちらでも成績が失われないこと */
+const cross = await page.evaluate(() => {
+  const S = DATA.content.settings, as = S.asOf || todayStr(), y = Number(as.slice(0,4));
+  DATA.players.push({ id:'PX1', name:'検証 太郎', regno:'', pref:'石川', sex:'男', birth:y-62, active:true });
+  DATA.players.push({ id:'PX2', name:'検証 次郎', regno:'', pref:'福井', sex:'男', birth:y-61, active:true });
+  const t = { id:'TX1', name:'検証大会', grade:'G2', pref:'石川', venue:'', date:`${y}-06-01`,
+              deadline:'', cats:CATS, evs:['シングルス'], draw:32, fee:'', host:'',
+              entryUrl:'', docUrl:'', published:true };
+  DATA.tournaments.push(t, { ...t, id:'TX2', date:`${y-2}-12-01` });
+  DATA.results.push(
+    { id:'RX1', tid:'TX1', ev:'シングルス', cat:'ミドル', sex:'男子', draw:32, place:'優勝', pid:'PX1', status:'承認済' },
+    { id:'RX2', tid:'TX2', ev:'シングルス', cat:'フリー', sex:'男子', draw:32, place:'優勝', pid:'PX2', status:'承認済' });
+  applyData(DATA);
+  const has = (cat, pid) => !!(BOARDS[`シングルス|男子|${cat}`]?.rows || []).find(r => r.pid === pid);
+  return {
+    ミドルからシニアへ: has('シニア', 'PX1'),
+    フリーには入らない: !has('フリー', 'PX1'),
+    昇格しても引き継ぐ: has('シニア', 'PX2') && has('ミドル', 'PX2') && has('フリー', 'PX2')
+  };
+});
+check('上位カテゴリへ算入される', cross.ミドルからシニアへ, 'ミドルの成績がシニアにも入る');
+check('下位カテゴリへは算入しない', cross.フリーには入らない, 'ミドルの成績はフリーに入らない');
+check('カテゴリが上がっても成績が残る', cross.昇格しても引き継ぐ, '年齢は集計基準日で判定');
+
 console.log('\n■ レスポンシブ');
 for (const [w, h, tag] of [[1360,1000,'PC'], [820,900,'タブレット'], [390,850,'スマホ']]){
   await page.setViewportSize({ width:w, height:h });

@@ -464,13 +464,17 @@ function computeRankings(D, asOfArg){
     const pts = Math.round(base * fade);
     if (!pts) continue;
     const entry = { grade:t.grade, place:r.place, pts, tid:t.id, name:t.name, date:t.date,
-                    base, fade };
+                    base, fade, cat:r.cat };
     push(boardKey(r.ev, r.sex, r.cat), r.pid, entry);
-    /* カテゴリ跨ぎ：フリーの成績は、年齢を満たす上位カテゴリにも算入 */
-    if (r.cat === 'フリー'){
-      const age = ageAt(p, t.date);
-      for (const c of ['ミドル','シニア']) if (age >= CAT_MIN_AGE[c]) push(boardKey(r.ev, r.sex, c), r.pid, entry);
-    }
+    /* カテゴリ跨ぎ：出場したカテゴリより対象年齢が上のカテゴリにも算入する。
+       シニアの選手が人数の都合でミドルに出ることがあり、フリーだけを特別扱いすると
+       その成績がシニアのランキングに反映されない。
+       年齢は集計基準日で見る。大会当日の年齢で判定すると、誕生日でカテゴリが上がった選手が
+       直前までの成績を全部失い、移った先のランキングで最下位から始まってしまう */
+    const age = ageAt(p, as);
+    for (const c of CATS)
+      if (CAT_MIN_AGE[c] > CAT_MIN_AGE[r.cat] && age >= CAT_MIN_AGE[c])
+        push(boardKey(r.ev, r.sex, c), r.pid, entry);
   }
 
   const boards = {};
@@ -1271,7 +1275,9 @@ function renderAbout(){
         上位${S.topN}大会までしか数えないので、多く出場して不利になることはありません。</li>`}
       <li><b class="text-ink">ランキング区分</b>　種目（${esc(rankEvs.join('／'))}）× 性別 × カテゴリ（${CATS.join('／')}）。ミックスダブルスは男女共通の1区分です。</li>
       <li><b class="text-ink">ダブルス</b>　ペアの獲得ポイントを両選手にそれぞれ100%付与します。</li>
-      <li><b class="text-ink">カテゴリ跨ぎ</b>　${CATS.slice(1).map(c => c+'（'+CAT_MIN_AGE[c]+'歳以上）').join('・')}の選手がフリーの部に出場した場合、獲得ポイントは両方のランキングに算入します。逆は不可。</li>
+      <li><b class="text-ink">カテゴリ跨ぎ</b>　出場したカテゴリより対象年齢が上のカテゴリにも、同じポイントを算入します。
+        たとえば${CAT_MIN_AGE['シニア']}歳以上の選手がフリーやミドルの部に出場した場合、その成績はシニアにも入ります。逆は不可。
+        年齢は集計基準日で判定するため、誕生日でカテゴリが変わっても、それまでの成績は移った先に引き継がれます。</li>
       ${S.winBasedPlaces === false ? '' : `<li><b class="text-ink">勝っていない入賞は数えない</b>
         1試合も勝たずに得た成績は「出場」として扱います。
         たとえば4名ドローのベスト4、2名ドローの準優勝は、出ただけで確定してしまうためです。</li>`}
