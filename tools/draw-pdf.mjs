@@ -120,24 +120,31 @@ export function extract(path){
     const bt = (s.match(/\bBT\b/g) || []).length, et = (s.match(/\bET\b/g) || []).length;
     return bt > 0 && Math.abs(bt - et) <= 1 && /\bT[jJ]\b/.test(s);
   };
-  const content = streams.filter(isContent).join('\n');
+  /* ページごとに内容ストリームが分かれる。座標はページ内のものなので、
+     連結すると別ページの文字が同じ場所に重なって見えてしまう。ページ番号を持たせておく */
+  const pages = streams.filter(isContent);
+  const content = pages.map((s, i) => `\n%%PAGE ${i}\n` + s).join('\n');
 
   /* 内容ストリームをトークンに分けて読む。
      生成元によって「数値を1行ずつ出す」ものと「1行にまとめる」ものがあるので、
      行ではなくトークン単位で見る。年をまたぐと生成元が変わるため一般化しておく */
   const items = [];
   const st = [];                    /* オペランドのスタック */
-  let tm = [1,0,0,1,0,0], tlm = tm, leading = 0;
+  let tm = [1,0,0,1,0,0], tlm = tm, leading = 0, page = 0;
   const put = txt => {
     const t = String(txt).trim();
-    if (t) items.push({ x: Math.round(tm[4]*10)/10, y: Math.round(tm[5]*10)/10, t });
+    if (t) items.push({ x: Math.round(tm[4]*10)/10, y: Math.round(tm[5]*10)/10, t, page });
   };
   const translate = (m, tx, ty) => [m[0], m[1], m[2], m[3], m[4] + tx*m[0] + ty*m[2], m[5] + tx*m[1] + ty*m[3]];
 
   for (let i = 0; i < content.length; ){
     const c = content[i];
     if (c === ' ' || c === '\n' || c === '\r' || c === '\t'){ i++; continue; }
-    if (c === '%'){ while (i < content.length && content[i] !== '\n') i++; continue; }
+    if (c === '%'){
+      const m = /^%%PAGE (\d+)/.exec(content.slice(i, i + 20));
+      if (m) page = Number(m[1]);
+      while (i < content.length && content[i] !== '\n') i++; continue;
+    }
     if (c === '('){ const s = readLiteral(content, i+1); st.push({ str: s });
       i = skipLiteral(content, i+1); continue; }
     if (c === '<' && content[i+1] !== '<'){
