@@ -40,7 +40,8 @@ function columns(items, tol = 12){
   return out.map(c => ({ x: c.items.reduce((s,i)=>s+i.x,0)/c.items.length, items: c.items }));
 }
 
-export function parseDraw(path){
+export function parseDraw(path, opt = {}){
+  const DX = opt.dx ?? 12;      /* 同じ試合とみなすスコアの横のずれ */
   const items = extract(path);
   if (!items.length) return null;
 
@@ -96,8 +97,13 @@ export function parseDraw(path){
     }
     const slots = nc.items.map(n => {
       const near = bucket.get(n).sort((a,b) => a.y - b.y);
+      /* 「欠場」は縦書きで1文字ずつ置かれることがあるので「欠」だけを見る。
+         欠場した枠を残すと、試合をしていないのに勝ち上がってしまう */
+      const withdrawn = items.some(i => /^欠$/.test(norm(i.t))
+        && i.y > n.y && i.y - n.y < 16        /* 枠のすぐ下に置かれる */
+        && (idx === 0 ? i.x > nameCol.x + 40 : i.x < nameCol.x - 40));
       return {
-        no: Number(n.t), y: n.y,
+        no: Number(n.t), y: n.y, withdrawn,
         names: near.map(r => norm(r.t)),
         prefs: near.map(r => nearPref(r.y, r.x)).filter(Boolean)
       };
@@ -111,75 +117,115 @@ export function parseDraw(path){
     .map(i => ({ x:i.x, y:i.y, v:Number(i.t) }))
     .filter(s => s.x > lx + 60 && s.x < rx - 60);
 
-  const used = new Set();
-  const key = s => `${Math.round(s.x)},${Math.round(s.y)}`;
   const matches = [], unresolved = [];
 
   for (const half of halves){
     if (!half.players.length) continue;
     const inward = half.side === 'L' ? 1 : -1;   /* 勝ち上がる向き */
-    let alive = half.players.map(p => ({ p, y: p.y, depth: 0, edge: half.x }));
-    let round = 1;
-    while (alive.length > 1 && round < 12){
-      const next = [];
-      for (let i = 0; i < alive.length; i += 2){
-        const a = alive[i], b = alive[i+1];
-        if (!b){ next.push({ ...a, y: a.y }); continue; }   /* 不戦勝 */
-        const lo = Math.min(a.y, b.y), hi = Math.max(a.y, b.y);
-        /* 2人のあいだにあり、まだ使っていない数字を、内側に近い順に見る */
-        const cands = scores.filter(s => s.y > lo + 1 && s.y < hi - 1 && !used.has(key(s)))
-          .sort((s1, s2) => inward * (s1.x - s2.x));
-        /* 同じ列（x が近い）2つを1試合とみなす */
-        let pair = null;
-        for (let k = 0; k < cands.length && !pair; k++)
-          for (let m = k+1; m < cands.length; m++)
-            if (Math.abs(cands[k].x - cands[m].x) <= 10){ pair = [cands[k], cands[m]]; break; }
-        /* スコアが見つからない＝不戦勝か、読み取れなかったか。
-           どちらか分からないまま勝者を決めると誤った順位になるので、未確定として印を付ける */
-        if (!pair){
-          unresolved.push({ round, a: a.p.names, b: b.p.names });
-          next.push({ ...a, y: (a.y + b.y)/2, unsure: true });
-          continue;
-        }
-        pair.forEach(s => used.add(key(s)));
-        const [up, dn] = pair.sort((s1,s2) => s1.y - s2.y);
-        const upper = a.y < b.y ? a : b, lower = a.y < b.y ? b : a;
-        const win = up.v > dn.v ? upper : lower;
-        const lose = win === upper ? lower : upper;
-        matches.push({ round, winner: win.p.names, loser: lose.p.names,
-                       score: `${Math.max(up.v,dn.v)}-${Math.min(up.v,dn.v)}` });
-        next.push({ ...win, y: (a.y + b.y)/2 });
+    const lo = Math.min(...half.players.map(p => p.y)) - 30;
+    const hi = Math.max(...half.players.map(p => p.y)) + 30;
+    /* この半分に属するスコア。半分の縦の範囲にあり、氏名より内側にあるもの */
+    const mine = scores.filter(s => s.y > lo && s.y < hi &&
+      (half.side === 'L' ? s.x > half.x + 60 : s.x < half.x - 60));
+
+    /* まず対戦を確定させる。スコアは実際に試合があった場所にしか描かれないので、
+       同じ列（x が近い）で上下に並ぶ2つが1試合になる。
+       枠の隣接から対戦を推測すると、不戦勝が散らばって配置されている実際の組み合わせと
+       合わなくなるため、順序を逆にしている */
+    const cand = [];
+    for (let i = 0; i < mine.length; i++)
+      for (let j = i+1; j < mine.length; j++){
+        const dx = Math.abs(mine[i].x - mine[j].x), dy = Math.abs(mine[i].y - mine[j].y);
+        if (dx <= DX && dy >= 4 && dy <= 500) cand.push({ a: mine[i], b: mine[j], dx, dy });
       }
-      alive = next;
-      round++;
+    cand.sort((p, q) => p.dx - q.dx || p.dy - q.dy);
+    const taken = new Set(), games = [];
+    for (const c of cand){
+      if (taken.has(c.a) || taken.has(c.b)) continue;
+      taken.add(c.a); taken.add(c.b);
+      const [up, dn] = [c.a, c.b].sort((s1,s2) => s1.y - s2.y);
+      games.push({ up, dn, x: (c.a.x + c.b.x)/2, mid: (up.y + dn.y)/2 });
     }
-    half.winner = alive[0] ? alive[0].p.names : null;
-    half.rounds = round - 1;
+    /* 内側に向かうほど後のラウンドになる */
+    games.sort((p, q) => inward * (p.x - q.x) || p.mid - q.mid);
+
+    /* 次に勝ち上がりを組む。各試合の相手は、スコアの上下それぞれに最も近い「まだ生きている枠」。
+       不戦勝の枠は試合が無いのでそのまま生き残り、次に自分の試合が来たときに拾われる */
+    let alive = half.players.filter(p => !p.withdrawn).map(p => ({ p, y: p.y, from: null }));
+    for (const g of games){
+      const above = alive.filter(e => e.y < g.up.y).sort((a,b) => b.y - a.y)[0];
+      const below = alive.filter(e => e.y > g.dn.y).sort((a,b) => a.y - b.y)[0];
+      if (!above || !below || above === below){ unresolved.push({ x:g.x, y:g.mid }); continue; }
+      const win = g.up.v > g.dn.v ? above : below;
+      const lose = win === above ? below : above;
+      const m = { id: matches.length, winner: win.p, loser: lose.p, x: g.x,
+                  feeds: [above.from, below.from],
+                  score: `${Math.max(g.up.v,g.dn.v)}-${Math.min(g.up.v,g.dn.v)}` };
+      matches.push(m);
+      alive = alive.filter(e => e !== above && e !== below);
+      alive.push({ p: win.p, y: g.mid, from: m.id });
+      alive.sort((a,b) => a.y - b.y);
+    }
+    half.top = alive.length === 1 ? alive[0] : null;
+    half.winner = half.top ? half.top.p.names : null;
+    half.alive = alive.length;
+    half.games = games.length;
   }
 
   /* 決勝は左右の勝者どうし。中央に残ったスコアで決める */
-  if (halves.length === 2 && halves[0].winner && halves[1].winner){
-    const rest = scores.filter(s => !used.has(key(s))).sort((a,b) => a.y - b.y);
+  let finalId = null;
+  if (halves.length === 2 && halves[0].top && halves[1].top){
+    const mid = (halves[0].x + halves[1].x) / 2;
+    const rest = scores.filter(s => Math.abs(s.x - mid) < 160)
+      .sort((a,b) => Math.abs(a.x - mid) - Math.abs(b.x - mid));
     let pair = null;
     for (let k = 0; k < rest.length && !pair; k++)
       for (let m = k+1; m < rest.length; m++)
-        if (Math.abs(rest[k].x - rest[m].x) <= 10 && Math.abs(rest[k].y - rest[m].y) < 120){
+        if (Math.abs(rest[k].x - rest[m].x) <= 9 && Math.abs(rest[k].y - rest[m].y) >= 4){
           pair = [rest[k], rest[m]]; break;
         }
     if (pair){
       const [up, dn] = pair.sort((a,b) => a.y - b.y);
-      /* 上に描かれているのが左半分の勝者 */
-      const win = up.v > dn.v ? halves[0].winner : halves[1].winner;
-      const lose = win === halves[0].winner ? halves[1].winner : halves[0].winner;
-      matches.push({ round: 'final', winner: win, loser: lose,
+      const win = up.v > dn.v ? halves[0].top : halves[1].top;
+      const lose = win === halves[0].top ? halves[1].top : halves[0].top;
+      finalId = matches.length;
+      matches.push({ id: finalId, winner: win.p, loser: lose.p, x: (up.x + dn.x)/2,
+                     feeds: [halves[0].top.from, halves[1].top.from],
                      score: `${Math.max(up.v,dn.v)}-${Math.min(up.v,dn.v)}` });
-    } else unresolved.push({ round:'final', a: halves[0].winner, b: halves[1].winner });
+    } else unresolved.push({ final:true });
   }
 
-  /* 出場者は「枠」単位ではなく人単位で返す。ダブルスは1枠に2名 */
-  const entries = halves.flatMap(h => h.players.map(p => ({ no:p.no, names:p.names, prefs:p.prefs })));
-  const players = entries.flatMap(e => e.names.map((n,i) => ({ name:n, pref: e.prefs[i] || e.prefs[0] || '' })));
-  return { entries, players, matches, unresolved,
+  /* 順位を決める。木をたどると1か所でも試合が欠けたときに全部決まらなくなるので、
+     試合が描かれた位置（中央にどれだけ近いか）でラウンドを判定する。
+     ドロー表では後のラウンドほど中央に寄って描かれるため、欠けに強い */
+  const PLACE = ['準優勝','ベスト4','ベスト8','ベスト16'];
+  const place = new Map();
+  const setPlace = (slot, p) => { if (!place.has(slot.no)) place.set(slot.no, p); };
+  if (matches.length){
+    const center = halves.length === 2 ? (halves[0].x + halves[1].x)/2 : halves[0].x;
+    const ordered = matches.map(m => ({ m, d: Math.abs(m.x - center) }))
+      .sort((a,b) => a.d - b.d).map(w => w.m);
+    /* 単純消去法なら決勝1・準決勝2・準々決勝4・4回戦8 と決まっている。
+       中央に近い順に、この数だけ取っていけばよい */
+    const fin = finalId !== null ? matches[finalId] : ordered[0];
+    if (fin) setPlace(fin.winner, '優勝');
+    let i = 0;
+    PLACE.forEach((label, k) => {
+      for (let n = 0; n < (1 << k) && i < ordered.length; n++, i++)
+        setPlace(ordered[i].loser, label);
+    });
+  }
+  /* 残りは、1勝でもしていれば1回戦突破、していなければ出場 */
+  const wonAny = new Set(matches.map(m => m.winner.no));
+  const entries = halves.flatMap(h => h.players.map(p => ({
+    no: p.no, names: p.names, prefs: p.prefs, withdrawn: p.withdrawn,
+    place: p.withdrawn ? '欠場'
+         : (place.get(p.no) || (wonAny.has(p.no) ? '1回戦突破' : '出場'))
+  })));
+  const players = entries.flatMap(e => e.names.map((n,i) =>
+    ({ name:n, pref: e.prefs[i] || e.prefs[0] || '', place: e.place })));
+  const out = matches.map(m => ({ winner: m.winner.names, loser: m.loser.names, score: m.score }));
+  return { entries, players, matches: out, unresolved,
            halves: halves.map(h => ({ side:h.side, n:h.players.length, winner:h.winner })) };
 }
 
@@ -193,12 +239,10 @@ if (process.argv[1] && process.argv[1].endsWith('draw-parse.mjs')){
     console.log(`復元できた試合 ${r.matches.length}（必要 ${need}）／ 未確定 ${r.unresolved.length}`);
     console.log('半分ごと:', r.halves.map(h => `${h.side} ${h.n}枠 勝者=${(h.winner||[]).join('・')}`).join(' / '));
     const nm = a => (a || []).join('・');
-    const byRound = {};
-    r.matches.forEach(m => (byRound[m.round] = byRound[m.round] || []).push(m));
-    for (const k of Object.keys(byRound)){
-      console.log(`\n[${k === 'final' ? '決勝' : k + '回戦'}] ${byRound[k].length}試合`);
-      byRound[k].slice(0, 5).forEach(m => console.log(`  ${nm(m.winner)} ${m.score} ${nm(m.loser)}`));
-      if (byRound[k].length > 5) console.log(`  …ほか${byRound[k].length-5}試合`);
-    }
+    const by = {};
+    r.entries.forEach(e => (by[e.place] = by[e.place] || []).push(nm(e.names)));
+    console.log('\n順位:');
+    for (const p of ['優勝','準優勝','ベスト4','ベスト8','ベスト16','1回戦突破','出場'])
+      if (by[p]) console.log(`  ${p.padEnd(6,'　')} ${by[p].length}枠  ${by[p].slice(0,4).join(' / ')}${by[p].length>4?' …':''}`);
   }
 }
