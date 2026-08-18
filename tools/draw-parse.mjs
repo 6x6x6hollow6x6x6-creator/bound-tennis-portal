@@ -251,7 +251,7 @@ export function parseDraw(path, opt = {}){
   /* 残りは、1勝でもしていれば1回戦突破、していなければ出場 */
   const wonAny = new Set(matches.map(m => m.winner.no));
   const entries = halves.flatMap(h => h.players.map(p => ({
-    no: p.no, names: p.names, prefs: p.prefs, withdrawn: p.withdrawn, wonFirst: !!p.wonFirst,
+    no: p.no, y: p.y, names: p.names, prefs: p.prefs, withdrawn: p.withdrawn, wonFirst: !!p.wonFirst,
     place: p.withdrawn ? '欠場'
          : (place.get(p.no) || (wonAny.has(p.no) ? '1回戦突破' : '出場'))
   })));
