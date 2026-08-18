@@ -123,7 +123,10 @@ export function build(dir){
           log.push(`${tag} ${f.ev}${f.cat}${f.sex}: ${e.names.join('・')} は欠場として除外`);
           continue;
         }
-        const place = placeOf.get(e.no) || '出場';
+        /* 上位8位は公式の値。それ以外は、1回戦を勝ったかどうかだけ使う。
+           2回戦以降は勝ち上がりの木が要るが、復元が当たらなかったので使わない
+           （公式の優勝者22名の勝ち数が平均1.3勝になってしまう） */
+        const place = placeOf.get(e.no) || (e.wonFirst ? '1回戦突破' : '出場');
         e.names.forEach((n, i) => {
           const p = getPlayer(n, e.prefs[i] || e.prefs[0] || '', f.sex);
           rid++;

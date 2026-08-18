@@ -548,7 +548,11 @@ function computeRankings(D, asOfArg){
       || gi(a.bestHigh.grade) - gi(b.bestHigh.grade)
       || (b.lastDate > a.lastDate ? 1 : b.lastDate < a.lastDate ? -1 : 0)
       || a.plays - b.plays);
-    listed.forEach((r,i) => r.rank = i + 1);
+    /* 同じBTPなら同順位にする（1,2,2,4…）。大会が少ないうちは同点が多く出るので、
+       並び順の都合で上下が付いているように見えるのを避ける */
+    listed.forEach((r,i) => {
+      r.rank = (i > 0 && r.pts === listed[i-1].pts) ? listed[i-1].rank : i + 1;
+    });
     boards[key] = { rows: listed, holders: rows.length - listed.length };
   }
   return boards;

@@ -191,6 +191,21 @@ check('全国ベスト4が県だけ回る選手より上', avg.全国ベスト4 
   `全国ベスト4 ${avg.全国ベスト4}pt > 県のみ ${avg.県だけ}pt`);
 check('有効大会数の上限が効いている', !rule.上限を超えている選手がいる, `上位${rule.有効大会数の上限}大会`);
 
+/* 同じBTPなら同順位。大会が少ないうちは同点が多いので、並び順の都合で上下が付いて見えないこと */
+const tie = await page.evaluate(() => {
+  const rows = Object.values(BOARDS).flatMap(b => b.rows);
+  const bad = [];
+  for (const b of Object.values(BOARDS))
+    for (let i = 1; i < b.rows.length; i++){
+      const a = b.rows[i-1], c = b.rows[i];
+      if (a.pts === c.pts && a.rank !== c.rank) bad.push(`${a.name}/${c.name}`);
+      if (a.pts !== c.pts && c.rank <= a.rank) bad.push(`順位が戻る:${c.name}`);
+    }
+  const dup = Object.values(BOARDS).filter(b => new Set(b.rows.map(r => r.rank)).size < b.rows.length).length;
+  return { 破れ: bad.length, 例: bad.slice(0,2), 同順位のある区分: dup };
+});
+check('同点は同順位', tie.破れ === 0, tie.破れ ? tie.例.join(' / ') : `${tie.同順位のある区分}区分に同順位あり`);
+
 /* 古い成績の減衰。サンプルデータは1年分しかないので、基準日をずらして確かめる */
 const decay = await page.evaluate(() => {
   const S = DATA.content.settings, as = S.asOf || todayStr();

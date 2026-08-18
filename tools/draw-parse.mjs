@@ -181,6 +181,24 @@ export function parseDraw(path, opt = {}){
       alive.push({ p: win.p, y: g.mid, from: m.id });
       alive.sort((a,b) => a.y - b.y);
     }
+    /* 1回戦だけは構造を推測せずに決められる。隣り合う枠どうしの対戦と決まっているので、
+       2人のあいだにある「いちばん外側の列」のスコアがその試合の結果になる。
+       2回戦以降は勝ち上がりの木が要るが、それは当たらなかったので使わない */
+    const slots = half.players.filter(p => !p.withdrawn);
+    for (let i = 0; i + 1 < slots.length; i += 2){
+      const a = slots[i], b = slots[i+1];
+      const between = mine.filter(s => s.y > Math.min(a.y,b.y) + 1 && s.y < Math.max(a.y,b.y) - 1)
+        .sort((s1,s2) => inward * (s1.x - s2.x));
+      let pair = null;
+      for (let k = 0; k < between.length && !pair; k++)
+        for (let m = k+1; m < between.length; m++)
+          if (Math.abs(between[k].x - between[m].x) <= DX){ pair = [between[k], between[m]]; break; }
+      if (!pair) continue;                       /* 不戦勝、または読み取れず */
+      const [up, dn] = pair.sort((s1,s2) => s1.y - s2.y);
+      const upper = a.y < b.y ? a : b, lower = a.y < b.y ? b : a;
+      (up.v > dn.v ? upper : lower).wonFirst = true;
+    }
+
     half.top = alive.length === 1 ? alive[0] : null;
     half.winner = half.top ? half.top.p.names : null;
     half.alive = alive.length;
@@ -233,7 +251,7 @@ export function parseDraw(path, opt = {}){
   /* 残りは、1勝でもしていれば1回戦突破、していなければ出場 */
   const wonAny = new Set(matches.map(m => m.winner.no));
   const entries = halves.flatMap(h => h.players.map(p => ({
-    no: p.no, names: p.names, prefs: p.prefs, withdrawn: p.withdrawn,
+    no: p.no, names: p.names, prefs: p.prefs, withdrawn: p.withdrawn, wonFirst: !!p.wonFirst,
     place: p.withdrawn ? '欠場'
          : (place.get(p.no) || (wonAny.has(p.no) ? '1回戦突破' : '出場'))
   })));
