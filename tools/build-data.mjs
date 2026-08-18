@@ -10,11 +10,14 @@
  * 役割分担：
  *   ・出場者（氏名・所属）… ドロー表。文字の取りこぼしが0.1%で正確
  *   ・上位8位の順位     … 成績結果Best8。協会が確定させた値そのもの
- *   ・1回戦突破の判別   … 使わない。ドロー表の幾何からの復元は当たらなかった
- *                        （優勝者が22種目中3種目しか一致しなかった）
+ *   ・8位より下の段     … ドロー表の**赤い線**をたどって出した勝ち数
+ *                        （勝った人の線が赤く伸びる。詳しくは draw-parse.mjs）
  *
  * 成績結果側は文字が欠けることがある（堀江和喜 → 江和喜）ので、
  * ドロー表の完全な氏名に部分一致で結びつける。
+ *
+ * ドロー表が公開されていない種目（第44回のフリー女子）は、
+ * 成績結果から上位8位だけを入れる。氏名は他の大会で登録済みの選手に寄せる。
  */
 import fs from 'fs';
 import path from 'path';
@@ -34,6 +37,15 @@ function currentContent(){
 }
 
 const norm = s => String(s || '').replace(/[\s　]/g, '');
+
+const PREFS = ('北海道青森岩手宮城秋田山形福島茨城栃木群馬埼玉千葉東京神奈川新潟富山石川福井山梨長野'
+  + '岐阜静岡愛知三重滋賀京都大阪兵庫奈良和歌山鳥取島根岡山広島山口徳島香川愛媛高知福岡佐賀長崎熊本大分宮崎鹿児島沖縄');
+/** 「北信越/福井」「北海道ﾌﾞﾛｯｸ」→「福井」「北海道」。揃えないと同じ選手が二重に登録される */
+const cleanPref = t => {
+  const s = norm(t).replace(/[()（）]/g, '').replace(/^.*\//, '')
+    .replace(/[ｦ-ﾟ]+$/, '').replace(/ブロック$/, '');
+  return PREFS.includes(s) ? s : (s.length <= 4 ? s : '');
+};
 
 /** 成績結果側は文字が抜けることがあり、抜ける位置は先頭とは限らない
  *  （佐々木健 → 佐々健、柳沢繁夫 → 柳沢夫）。順序を保った部分列として照合する */
@@ -83,7 +95,9 @@ function findEntry(entries, names, pref){
 
 export function build(dir){
   const files = JSON.parse(fs.readFileSync(path.join(dir, 'index.json'), 'utf8'));
-  const tags = [...new Set(files.map(f => f.tag))];
+  /* 古い大会から処理する。ドロー表が無い種目の氏名を、先に登録した選手に寄せるため */
+  const tags = [...new Set(files.map(f => f.tag))].sort();
+  const drawOf = new Map();          /* 種目ごとの枠数。ドロー表が無い年の推定に使う */
 
   const players = new Map();        /* 氏名+所属 → 選手 */
   const tournaments = [], results = [];
@@ -119,7 +133,33 @@ export function build(dir){
 
     for (const f of mine){
       const d = parseDraw(f.out);
-      if (!d){ log.push(`${tag} ${f.ev}${f.cat}${f.sex}: ドロー表を読めず、取り込まない`); continue; }
+      if (!d){
+        /* ドロー表が読めなくても、成績結果に載っていれば上位8位だけは入れられる。
+           第44回のフリー女子は協会サイトに分割版の一部しか公開されていない。
+           氏名は成績結果側で文字が抜けるので、別の大会・種目で登録済みの選手に寄せる */
+        const be2 = best.find(x => x.ev === f.ev && x.cat === f.cat && x.sex === f.sex);
+        if (!be2){ log.push(`${tag} ${f.ev}${f.cat}${f.sex}: ドロー表も成績結果も無く、取り込まない`); continue; }
+        /* ドロー係数のために枠数が要る。同じ種目の別の年の値を使う */
+        const est = drawOf.get(`${f.ev}|${f.cat}|${f.sex}`) || 0;
+        if (!est) log.push(`${tag} ${f.ev}${f.cat}${f.sex}: 枠数が分からずドロー係数を最低で計算する`);
+        let n8 = 0;
+        for (const r of be2.results){
+          for (const nm of r.names){
+            const known = [...players.values()].filter(p =>
+              (p.name === nm || isSubseq(nm, p.name)) &&
+              (!r.pref || !p.pref || p.pref.includes(cleanPref(r.pref)) || cleanPref(r.pref).includes(p.pref)));
+            const p = known.length === 1 ? known[0] : getPlayer(nm, cleanPref(r.pref), f.sex);
+            if (known.length !== 1) log.push(`${tag} ${f.ev}${f.cat}${f.sex}: 「${nm}」は照合できず、そのまま登録`);
+            rid++;
+            results.push({ id: 'R' + String(rid).padStart(5,'0'), tid: t.id,
+                           ev: f.ev, cat: f.cat, sex: f.sex, draw: est,
+                           place: r.place, pid: p.id, status: '承認済', submitted: date, note: '' });
+            n8++;
+          }
+        }
+        log.push(`${tag} ${f.ev}${f.cat}${f.sex}: ドロー表が無いため上位8位のみ ${n8}件`);
+        continue;
+      }
 
       /* まず全員を「出場」で登録する */
       const placeOf = new Map();
@@ -156,6 +196,7 @@ export function build(dir){
                          status: '承認済', submitted: date, note: '' });
         });
       }
+      drawOf.set(`${f.ev}|${f.cat}|${f.sex}`, d.entries.length);
       const got = [...placeOf.values()].length;
       log.push(`${tag} ${f.ev}${f.cat}${f.sex}: 出場${d.entries.length}枠 / 順位${got}件`);
     }
