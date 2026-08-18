@@ -155,6 +155,10 @@ export function parseDraw(path, opt = {}){
 
   /* 枠ごとに、その番号の y に近い氏名を集める。シングルスは1名、ダブルスは2名になる */
   const halves = numCols.map((nc, idx) => {
+    /* 枠の行間。欠場の印を探す範囲をこれで決める */
+    const ys = nc.items.map(i => i.y).sort((a,b) => a - b);
+    const rowGap = ys.length > 1
+      ? Math.min(...ys.slice(1).map((y,i) => y - ys[i])) : 30;
     const nameCol = nameCols[idx] || nameCols[0];
     /* 氏名は「いちばん近い枠」に割り当てる。行間は大会や種目で変わるので、
        固定の許容幅で拾うとシングルスでも隣の行まで巻き込む */
@@ -166,12 +170,13 @@ export function parseDraw(path, opt = {}){
     }
     const slots = nc.items.map(n => {
       const near = bucket.get(n).sort((a,b) => a.y - b.y);
-      /* 「欠場」は縦書きで1文字ずつ置かれることがあるので「欠」だけを見る。
-         欠場した枠を残すと、試合をしていないのに勝ち上がってしまう */
-      /* 「欠」は1回戦のスコアが入る位置（枠のすぐ下）に書かれる。
-         範囲を広く取ると隣の枠まで欠場扱いにしてしまうので狭くする */
-      const withdrawn = items.some(i => /^欠$/.test(norm(i.t))
-        && i.y - n.y >= 4 && i.y - n.y <= 12
+      /* 「欠場」の書かれ方は一定しない。縦書きで「欠」「場」に分かれることも、
+         1語で置かれることもある。位置も枠の下だけでなく上のこともある。
+         欠場した枠を残すと、試合をしていないのに勝ち上がってしまう。
+         隣の枠まで巻き込まないよう、範囲は行間の半分までに抑える */
+      const room = Math.max(6, Math.min(14, rowGap / 2 - 1));
+      const withdrawn = items.some(i => /^欠(場)?$/.test(norm(i.t))
+        && Math.abs(i.y - n.y) <= room
         && (idx === 0 ? (i.x > nameCol.x + 40 && i.x < centerX)
                       : (i.x < nameCol.x - 40 && i.x > centerX)));
       return {
