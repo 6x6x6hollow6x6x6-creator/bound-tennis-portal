@@ -246,6 +246,8 @@ tailwind.config = {
         <span id="admDirty" class="text-[11.5px] text-red-200 font-bold" hidden>● 未保存の変更あり</span>
         <button id="admSave" class="rounded-full bg-white text-navy text-[12.5px] font-bold px-5 py-2">保存する</button>
         <button id="admExport" class="rounded-full border border-white/40 text-[12.5px] font-bold px-4 py-2">JSON書き出し</button>
+        <button id="admImport" class="rounded-full border border-white/40 text-[12.5px] font-bold px-4 py-2">JSON読み込み</button>
+        <input id="admImportFile" type="file" accept="application/json,.json" hidden>
         <button id="admReload" class="rounded-full border border-white/40 text-[12.5px] font-bold px-4 py-2">再読み込み</button>
         <button id="admClose" class="rounded-full border border-white/40 text-[12.5px] font-bold px-4 py-2">閉じる</button>
       </div>
@@ -1489,6 +1491,25 @@ $('#admExport').addEventListener('click', () => {
   a.click();
   setTimeout(() => URL.revokeObjectURL(a.href), 2000);
   toast('btp-data.json を書き出しました。');
+});
+/* 書き出したJSONを読み戻す。外部で作ったデータ（ドロー表からの取り込みなど）を入れる口でもある。
+   読み込んだだけでは保存されないので、内容を確かめてから「保存する」を押す運用 */
+$('#admImport').addEventListener('click', () => $('#admImportFile').click());
+$('#admImportFile').addEventListener('change', async e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  e.target.value = '';
+  let o;
+  try { o = JSON.parse(await file.text()); }
+  catch (err){ return toast('JSONとして読めませんでした。', 'error'); }
+  const arrays = ['tournaments','players','results','news'];
+  if (!arrays.every(k => Array.isArray(o[k]))) return toast('この形式のJSONではありません。', 'error');
+  const before = `大会${DATA.tournaments.length} 選手${DATA.players.length} 結果${DATA.results.length}`;
+  const after  = `大会${o.tournaments.length} 選手${o.players.length} 結果${o.results.length}`;
+  if (!confirm(`いまの内容をすべて置き換えます。\n\n現在：${before}\n読み込み後：${after}\n\nよろしいですか。`)) return;
+  DATA = normalise({ ...o, content: o.content || DATA.content });
+  markDirty(); applyData(DATA); renderAdmin();
+  toast('読み込みました。内容を確認して「保存する」を押してください。', 'warn');
 });
 $('#admReload').addEventListener('click', async () => {
   if (ADM_DIRTY && !confirm('保存していない変更は消えます。読み込み直しますか？')) return;

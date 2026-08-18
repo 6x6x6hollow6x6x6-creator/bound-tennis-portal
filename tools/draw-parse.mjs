@@ -74,15 +74,27 @@ export function parseDraw(path, opt = {}){
   if (!nameCols.length) return null;
 
   /* 各氏名の右か左にある都道府県を拾う（同じ y の近くにあるもの） */
-  const prefItems = items.filter(i => isPrefName(i.t) || /\//.test(i.t));
+  /** 都道府県の書き方を1つに揃える。「(福　井)」「北信越/福井」「北海道ﾌﾞﾛｯｸ」→「福井」「北海道」
+   *  揃えないと同じ選手が別人として二重に登録される */
+  const cleanPref = t => {
+    let s = bare(t).replace(/^.*\//, '').replace(/[ｦ-ﾟ]+$/, '').replace(/ブロック$/, '');
+    return PREFS.includes(s) ? s : (s.length <= 4 && s ? s : '');
+  };
+  const prefItems = items.filter(i => isPrefName(i.t) && cleanPref(i.t));
   const nearPref = (y, x) => {
     let best = null, bd = 1e9;
     for (const p of prefItems){
       const d = Math.abs(p.y - y);
       if (d < 6 && Math.abs(p.x - x) < 260 && d < bd){ bd = d; best = p; }
     }
-    return best ? norm(best.t) : '';
+    return best ? cleanPref(best.t) : '';
   };
+
+  /* 左右の半分の境目。「欠」を探す範囲をここで区切らないと、
+     左半分の「欠」を右半分の枠が拾ってしまう */
+  const centerX = nameCols.length > 1
+    ? (nameCols[0].x + nameCols[nameCols.length-1].x) / 2
+    : nameCols[0].x + 300;
 
   /* 枠ごとに、その番号の y に近い氏名を集める。シングルスは1名、ダブルスは2名になる */
   const halves = numCols.map((nc, idx) => {
@@ -99,9 +111,12 @@ export function parseDraw(path, opt = {}){
       const near = bucket.get(n).sort((a,b) => a.y - b.y);
       /* 「欠場」は縦書きで1文字ずつ置かれることがあるので「欠」だけを見る。
          欠場した枠を残すと、試合をしていないのに勝ち上がってしまう */
+      /* 「欠」は1回戦のスコアが入る位置（枠のすぐ下）に書かれる。
+         範囲を広く取ると隣の枠まで欠場扱いにしてしまうので狭くする */
       const withdrawn = items.some(i => /^欠$/.test(norm(i.t))
-        && i.y > n.y && i.y - n.y < 16        /* 枠のすぐ下に置かれる */
-        && (idx === 0 ? i.x > nameCol.x + 40 : i.x < nameCol.x - 40));
+        && i.y - n.y >= 4 && i.y - n.y <= 12
+        && (idx === 0 ? (i.x > nameCol.x + 40 && i.x < centerX)
+                      : (i.x < nameCol.x - 40 && i.x > centerX)));
       return {
         no: Number(n.t), y: n.y, withdrawn,
         names: near.map(r => norm(r.t)),
