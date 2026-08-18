@@ -250,7 +250,7 @@ export function build(dir){
   if (content){
     /* 掲載中の注意バーは、取り込み後は実データになるので文言を変える */
     content.site = { ...content.site,
-      noticeBar: '検討用の試作サイトです。全日本選手権の公開資料から取り込んだ暫定集計です。' };
+      noticeBar: 'これは検討用の試作サイトです。協会の決定事項ではありません。順位・配点は提案段階のもので、公開資料から機械的に取り込んだ暫定集計です。' };
     log.push('配点・集計ルールとサイト文言も index.html の内容で入れ替える');
   } else log.push('⚠ index.html から設定を取り出せなかった');
 
