@@ -259,6 +259,18 @@ if (sample.大会){
   check('サンプル大会に印がある', sample.印がある, `${sample.大会}大会`);
   check('サンプルはランキングに入らない', sample.算入 === 0 && sample.配点.every(p => p === 0),
     `結果${sample.結果}件はすべて0pt`);
+
+  /* 開催前の大会が並び、要項・申込のボタンが出ること */
+  const up = await page.evaluate(() => {
+    const f = DATA.tournaments.filter(t => isSample(t) && t.date >= AS);
+    return { 件数: f.length,
+             状態: [...new Set(f.map(t => tournamentStatus(t, AS).k))],
+             要項: f.filter(t => safeUrl(t.docUrl)).length,
+             申込: f.filter(t => safeUrl(t.entryUrl)).length };
+  });
+  check('開催前のサンプル大会がある', up.件数 >= 2, `${up.件数}件／状態 ${up.状態.join('・')}`);
+  check('要項と申込のリンクが付いている', up.要項 >= 1 && up.申込 >= 1,
+    `要項${up.要項}件 / 申込${up.申込}件`);
 }
 await page.keyboard.press('Escape');
 await page.waitForTimeout(300);

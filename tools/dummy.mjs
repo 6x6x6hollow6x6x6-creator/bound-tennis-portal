@@ -22,6 +22,11 @@ import fs from 'fs';
 const PLACES = ['優勝','準優勝','ベスト4','ベスト4','ベスト8','ベスト8','ベスト8','ベスト8',
                 'ベスト16','ベスト16','ベスト16','ベスト16','1回戦突破','1回戦突破','出場','出場'];
 
+/* サンプルの要項・申込書。GitHub Pages に置いてある同じリポジトリの静的ファイル */
+const SITE = 'https://6x6x6hollow6x6x6-creator.github.io/bound-tennis-portal';
+const DOC = `${SITE}/sample/%E8%A6%81%E9%A0%85.html`;
+const ENTRY = `${SITE}/sample/%E7%94%B3%E8%BE%BC%E6%9B%B8.html`;
+
 /* 交流大会だけを作る。**G4・G5は配点が0なのでランキングには一切影響しない。**
    全国の大会の9割はこの手の交流大会で、ポータルとしての本体はここ。
    団体戦やBTラリー戦を含む、実際にありそうな構成にしてある */
@@ -41,6 +46,23 @@ const PLAN = [
   { id:'TDUMMY5', name:'北信越シニアフレンドリー大会', grade:'G4', pref:'富山',
     venue:'富山市総合体育館', date:'2026-04-26', host:'富山県バウンドテニス協会 北部支部',
     cats:['シニア'], evs:['ダブルス','団体戦'], draw:14 },
+
+  /* ここから先は開催前の大会。日付は「今日」からの相対で決めるので、
+     いつ実行しても「受付中」「締切間近」「受付前」が1つずつ並ぶ。
+     結果はまだ無いので入れない */
+  { id:'TDUMMY6', name:'第9回 ふれあいバウンドテニス交流大会', grade:'G4', pref:'石川',
+    venue:'野々市市民体育館', inDays:60, deadlineInDays:39, host:'野々市バウンドテニス協会',
+    cats:['フリー','ミドル','シニア'], evs:['ダブルス','団体戦'], draw:18,
+    fee:'2,000円', doc:true, entry:true },
+  { id:'TDUMMY7', name:'秋季オープン 多摩サーキット 第11戦', grade:'G5', pref:'東京',
+    venue:'駒沢オリンピック公園総合運動場 屋内球技場', inDays:24, deadlineInDays:5,
+    host:'多摩バウンドテニス協会',
+    cats:['フリー'], evs:['シングルス','ダブルス'], draw:16, fee:'1,500円', doc:true, entry:true },
+  { id:'TDUMMY8', name:'第22回 かながわ親睦バウンドテニス大会', grade:'G5', pref:'神奈川',
+    venue:'横浜市スポーツ医科学センター', inDays:110, deadlineInDays:82,
+    host:'横浜バウンドテニスクラブ',
+    cats:['フリー','ミドル'], evs:['ダブルス','団体戦','BTラリー戦'], draw:12,
+    fee:'1,500円', doc:true },
 ];
 
 export function addDummies(data){
@@ -77,13 +99,25 @@ export function addDummies(data){
   }
   const canPlay = (p, cat) => (topCat.get(p.id) ?? 0) >= (LEVEL[cat] ?? 0);
 
+  /* 開催前の大会は「今日」からの相対で日付を決める。
+     いつ実行しても受付中・締切間近・受付前が並ぶようにするため */
+  const today = new Date();
+  const shift = n => { const d = new Date(today); d.setDate(d.getDate() + n);
+    return d.toISOString().slice(0,10); };
+
   for (const plan of PLAN){
-    const t = { ...plan, name: `【サンプル】${plan.name}`,
-                deadline: plan.date, fee: '2,500円',
+    const date = plan.date || shift(plan.inDays);
+    const t = { id: plan.id, name: `【サンプル】${plan.name}`,
+                grade: plan.grade, pref: plan.pref, venue: plan.venue,
+                date, deadline: plan.deadlineInDays != null ? shift(plan.deadlineInDays) : date,
+                cats: plan.cats, evs: plan.evs, draw: plan.draw,
+                fee: plan.fee || '2,500円',
                 host: `${plan.host}（架空の大会です）`,
-                entryUrl: '', docUrl: '', published: true };
-    delete t.id; t.id = plan.id;
+                entryUrl: plan.entry ? ENTRY : '',
+                docUrl: plan.doc ? DOC : '',
+                published: true };
     tournaments.push(t);
+    if (plan.inDays != null) continue;      /* これから開催する大会に結果は無い */
 
     const all = pool(plan);
     if (!all.length) continue;
