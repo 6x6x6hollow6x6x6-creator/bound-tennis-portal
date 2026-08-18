@@ -226,6 +226,26 @@ const tie = await page.evaluate(() => {
 });
 check('同点は同順位', tie.破れ === 0, tie.破れ ? tie.例.join(' / ') : `${tie.同順位のある区分}区分に同順位あり`);
 
+/* 大会結果は区分ごとに切り替えられること。全国大会は12区分あり、
+   まとめて出すと読み切れない */
+/* 管理画面が開いたままだとクリックできないので閉じる */
+await page.evaluate(() => { const a = document.querySelector('#adminScreen'); if (a) a.hidden = true; });
+await page.evaluate(() => go('results'));
+await page.waitForTimeout(500);
+await page.evaluate(() => document.querySelector('[data-res]').click());
+await page.waitForTimeout(500);
+const res = await page.evaluate(() => {
+  const keys = [...document.querySelectorAll('#resKeys [data-key]')];
+  const one = document.querySelectorAll('#resBody tbody tr').length;
+  keys.at(-1).click();                       /* 「すべて」 */
+  const all = document.querySelectorAll('#resBody tbody tr').length;
+  return { 区分: keys.length - 1, 選択時: one, すべて: all };
+});
+check('大会結果を区分で絞れる', res.区分 >= 2 && res.選択時 < res.すべて,
+  `${res.区分}区分／1区分${res.選択時}行 → すべて${res.すべて}行`);
+await page.keyboard.press('Escape');
+await page.waitForTimeout(300);
+
 /* 古い成績の減衰。サンプルデータは1年分しかないので、基準日をずらして確かめる */
 const decay = await page.evaluate(() => {
   const S = DATA.content.settings, as = S.asOf || todayStr();

@@ -725,6 +725,11 @@ document.addEventListener('click', e => {
 });
 $('#menuBtn').addEventListener('click', () => $('#drawer').hidden = !$('#drawer').hidden);
 
+/** たたき台用に入れた架空の大会。実データと見分けがつくようにする */
+const isSample = t => Boolean(t) && String(t.id || '').startsWith('TDUMMY');
+const sampleTag = t => isSample(t)
+  ? '<span class="inline-block text-[10.5px] font-bold bg-brand-red text-white px-2 py-0.5 whitespace-nowrap">サンプル</span>'
+  : '';
 const gchip = g => `<span class="inline-flex items-center gap-1.5 text-[11px] font-bold border border-rule px-2 py-0.5 whitespace-nowrap">
   <i class="w-2 h-2 block" style="background:var(--tw-g)"></i>${esc(g)} ${esc(GL[g] || '')}</span>`.replace('var(--tw-g)', gcolor(g));
 function gcolor(g){ return { G1:'#001f33', G2:'#103f5f', G3:'#23628b', G4:'#4a86ae', G5:'#7ba7c6' }[g] || '#8a8a8a'; }
@@ -746,7 +751,7 @@ function eventRow(t){
       <div class="text-xs text-ink-soft mt-0.5">
         <span class="text-ink-mute mr-1">会場</span>${esc(t.pref)}・${esc(t.venue)}
         <span class="hidden md:inline"><span class="text-ink-mute mx-1">主催</span>${esc(t.host)}</span></div>
-      <div class="flex gap-1.5 flex-wrap mt-2">${gchip(t.grade)}
+      <div class="flex gap-1.5 flex-wrap mt-2">${gchip(t.grade)}${sampleTag(t)}
         ${t.cats.map(c => `<span class="text-[11px] text-ink-soft border border-rule px-2">${esc(c)}</span>`).join('')}
         ${t.evs.map(v => `<span class="text-[11px] text-ink-soft border border-rule px-2">${esc(v)}</span>`).join('')}</div>
     </div>
@@ -1004,7 +1009,9 @@ function renderRanking(reset){
         <div class="stack flex w-full h-[22px] gap-0.5">${c.map((x,i) =>
           `<span data-i="${i}" style="width:${(x.pts/(row.sum ?? row.pts)*100).toFixed(2)}%;background:${gcolor(x.grade)}"></span>`).join('')}</div>
         <div class="flex flex-wrap gap-x-4 gap-y-1 mt-2.5 text-[11.5px] text-ink-soft">${c.map(x =>
-          `<span class="inline-flex items-center gap-1.5"><i class="w-2.5 h-2.5 block" style="background:${gcolor(x.grade)}"></i>${esc(x.grade)} ${esc(x.place)} <b class="tnum text-ink">${fmtN(x.pts)}</b>${
+          `<span class="inline-flex items-center gap-1.5"><i class="w-2.5 h-2.5 block" style="background:${gcolor(x.grade)}"></i>${
+            isSample(T_BY_ID[x.tid]) ? '<span class="text-[10px] font-bold text-brand-red">サンプル</span> ' : ''
+          }${esc(x.grade)} ${esc(x.place)} <b class="tnum text-ink">${fmtN(x.pts)}</b>${
             x.fade && x.fade < 1 ? `<span class="text-[10px] text-ink-mute">（${fmtN(x.base)}×${x.fade}）</span>` : ''}</span>`).join('')}</div>
         <p class="text-[11px] text-ink-mute mt-2.5 leading-relaxed">出場 ${row.plays} 大会のうち上位${c.length}大会を算入。${
           row.div > 1 ? `1大会あたりの平均で比べるため、${row.div}（採用大会数と下限${S.minDivisor||2}の大きいほう）で割っています。` : ''}</p>
@@ -1090,7 +1097,7 @@ function renderResults(reset){
       <div class="max-md:col-span-2 max-md:mt-2">
         <div class="text-[15px] font-bold tracking-wide">${esc(t.name)}</div>
         <div class="text-xs text-ink-soft mt-0.5"><span class="text-ink-mute mr-1">会場</span>${esc(t.pref)}・${esc(t.venue)}</div>
-        <div class="flex gap-1.5 flex-wrap mt-2">${gchip(t.grade)}
+        <div class="flex gap-1.5 flex-wrap mt-2">${gchip(t.grade)}${sampleTag(t)}
           <span class="text-[11px] text-ink-soft border border-rule px-2">優勝 ${esc(champs.slice(0,2).join('・'))}${champs.length>2?' ほか':''}</span></div>
       </div>
       <div class="max-md:col-span-2 text-right max-md:text-left text-[12.5px] font-bold text-navy underline underline-offset-4 max-md:mt-2">結果を見る</div>
@@ -1107,29 +1114,52 @@ function openResult(tid){
   openModal(
     `<div class="flex gap-2 flex-wrap mb-2.5">
        <span class="bg-white text-navy text-[11.5px] font-bold px-3.5 py-0.5">${esc(t.grade)} ${esc(GL[t.grade]||'')}</span>
-       <span class="text-[11px] font-bold px-2.5 py-0.5 bg-white/15">結果確定</span></div>
-     <h3 class="text-[19px] font-bold leading-relaxed pr-8">${esc(t.name)}</h3>`,
+       <span class="text-[11px] font-bold px-2.5 py-0.5 bg-white/15">結果確定</span>${sampleTag(t)}</div>
+     <h3 class="text-[19px] font-bold leading-relaxed pr-8">${esc(t.name)}</h3>
+     ${isSample(t) ? `<p class="text-[12px] text-white/75 mt-2 leading-relaxed">
+       これは操作を確かめるための架空の大会です。選手名は実在しますが、成績は実際のものではありません。</p>` : ''}`,
     `<dl class="grid grid-cols-[104px_1fr] text-[13.5px] mb-2">
        ${[['開催日',dateJP(t.date)],['会場',`${esc(t.venue)}（${esc(t.pref)}）`],['主催',esc(t.host)]]
          .map(([k,v]) => `<dt class="text-[11.5px] font-bold text-ink-soft tracking-wider py-2 border-b border-rule">${k}</dt>
                           <dd class="py-2 border-b border-rule">${v}</dd>`).join('')}</dl>
-     ${Object.entries(groups).map(([k, arr]) => {
-       const [ev, cat, sex] = k.split('|');
-       const draw = Math.max(...arr.map(r => r.draw || t.draw || 0));
-       const coef = drawCoef(S, draw);
-       const sorted = [...arr].sort((a,b) => PLACES.indexOf(a.place) - PLACES.indexOf(b.place));
-       return `<h4 class="text-sm font-bold tracking-wide mt-5 mb-2">${esc(ev)}　${esc(cat)}${sex !== '混合' ? '・'+esc(sex) : ''}
-         <span class="text-[11px] font-normal text-ink-mute">（本戦 ${draw}名／係数 ${coef.toFixed(2)}）</span></h4>
-         <table class="w-full text-sm"><thead><tr class="bg-navy text-white text-[11px]">
-           <th class="text-left px-3 py-2 w-24">成績</th><th class="text-left px-3 py-2">選手</th>
-           <th class="text-left px-3 py-2 hidden sm:table-cell">所属</th><th class="text-right px-3 py-2">獲得pt</th></tr></thead>
-         <tbody>${sorted.map(r => { const pl = P_BY_ID[r.pid] || {};
-           return `<tr class="border-b border-rule"><td class="px-3 py-2">${esc(r.place)}</td>
-             <td class="px-3 py-2 text-[14px] font-bold">${esc(pl.name || r.pid)}</td>
-             <td class="px-3 py-2 text-[11px] hidden sm:table-cell">${esc(pl.pref || '')}</td>
-             <td class="px-3 py-2 text-right font-bold text-navy tnum">${fmtN(awardedPoint(S, t.grade, r.place, r.draw || t.draw))}</td></tr>`;
-         }).join('')}</tbody></table>`;
-     }).join('')}`);
+     <div id="resKeys" class="flex gap-1.5 flex-wrap py-3 border-b border-rule"></div>
+     <div id="resBody"></div>`);
+
+  /* 全国大会は12区分あり、全部並べると読み切れない。区分を選んで見せる */
+  const keys = Object.keys(groups);
+  const label = k => { const [ev, cat, sex] = k.split('|');
+    return `${cat}${sex !== '混合' ? '・' + sex : ''}　${ev}`; };
+  const drawRes = sel => {
+    $('#resKeys').innerHTML = keys.map(k =>
+      `<button class="rounded-full border px-3.5 py-1 text-[12px] font-bold whitespace-nowrap ${
+        k === sel ? 'bg-navy text-white border-navy' : 'border-rule text-ink-soft hover:border-navy'
+      }" data-key="${esc(k)}">${esc(label(k))}</button>`).join('')
+      + `<button class="rounded-full border px-3.5 py-1 text-[12px] font-bold whitespace-nowrap ${
+        sel === '*' ? 'bg-navy text-white border-navy' : 'border-rule text-ink-soft hover:border-navy'
+      }" data-key="*">すべて</button>`;
+    const show = sel === '*' ? keys : [sel];
+    $('#resBody').innerHTML = show.map(k => {
+      const arr = groups[k];
+      const [ev, cat, sex] = k.split('|');
+      const draw = Math.max(...arr.map(r => r.draw || t.draw || 0));
+      const coef = drawCoef(S, draw);
+      const sorted = [...arr].sort((a,b) => PLACES.indexOf(a.place) - PLACES.indexOf(b.place));
+      return `<h4 class="text-sm font-bold tracking-wide mt-5 mb-2">${esc(ev)}　${esc(cat)}${sex !== '混合' ? '・'+esc(sex) : ''}
+        <span class="text-[11px] font-normal text-ink-mute">（本戦 ${draw}名／係数 ${coef.toFixed(2)}／${arr.length}名）</span></h4>
+        <div class="overflow-x-auto"><table class="w-full text-sm min-w-[420px]"><thead><tr class="bg-navy text-white text-[11px]">
+          <th class="text-left px-3 py-2 w-24">成績</th><th class="text-left px-3 py-2">選手</th>
+          <th class="text-left px-3 py-2 hidden sm:table-cell">所属</th><th class="text-right px-3 py-2">獲得pt</th></tr></thead>
+        <tbody>${sorted.map(r => { const pl = P_BY_ID[r.pid] || {};
+          return `<tr class="border-b border-rule"><td class="px-3 py-2 whitespace-nowrap">${esc(r.place)}</td>
+            <td class="px-3 py-2 text-[14px] font-bold">${esc(pl.name || r.pid)}</td>
+            <td class="px-3 py-2 text-[11px] hidden sm:table-cell whitespace-nowrap">${esc(pl.pref || '')}</td>
+            <td class="px-3 py-2 text-right font-bold text-navy tnum">${fmtN(awardedPoint(S, t.grade, r.place, r.draw || t.draw))}</td></tr>`;
+        }).join('')}</tbody></table></div>`;
+    }).join('');
+    $$('#resKeys [data-key]').forEach(b =>
+      b.addEventListener('click', () => { drawRes(b.dataset.key); $('#modalBody').scrollTop = 0; }));
+  };
+  drawRes(keys.length > 1 ? keys[0] : (keys[0] || '*'));
 }
 
 function newsRow(n, compact){
