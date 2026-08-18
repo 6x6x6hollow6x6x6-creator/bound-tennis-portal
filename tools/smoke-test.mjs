@@ -235,6 +235,22 @@ check('上位カテゴリへ算入される', cross.ミドルからシニアへ,
 check('下位カテゴリへは算入しない', cross.フリーには入らない, 'ミドルの成績はフリーに入らない');
 check('カテゴリが上がっても成績が残る', cross.昇格しても引き継ぐ, '年齢は集計基準日で判定');
 
+/* 出場資格の検査。取り込みで別人に当ててしまった場合、たいていここに出る */
+const elig = await page.evaluate(() => {
+  const y = Number((DATA.content.settings.asOf || todayStr()).slice(0,4)), d = `${y}-06-01`;
+  const p = age => ({ name:`${age}歳`, birth: y - age });
+  return {
+    若すぎる: !!catAgeIssue(p(30), 'シニア', d),
+    境界は通す: !catAgeIssue(p(59), 'シニア', d) && !catAgeIssue(p(44), 'ミドル', d),
+    資格ありは通す: !catAgeIssue(p(62), 'シニア', d) && !catAgeIssue(p(30), 'フリー', d),
+    年上は下位に出られる: !catAgeIssue(p(62), 'ミドル', d) && !catAgeIssue(p(62), 'フリー', d)
+  };
+});
+check('資格の無いカテゴリを弾く', elig.若すぎる, '30歳をシニアで登録できない');
+check('境界は猶予を持たせる', elig.境界は通す, '年度内に達する年齢との差を1歳ぶん吸収');
+check('資格のある登録は通す', elig.資格ありは通す && elig.年上は下位に出られる,
+  '年上の選手が下位カテゴリに出るのは可');
+
 console.log('\n■ レスポンシブ');
 for (const [w, h, tag] of [[1360,1000,'PC'], [820,900,'タブレット'], [390,850,'スマホ']]){
   await page.setViewportSize({ width:w, height:h });

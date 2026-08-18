@@ -410,6 +410,18 @@ function drawCoef(S, draw){
   for (const r of rows) if (draw >= r.min) return r.coef;
   return rows.length ? rows[rows.length-1].coef : 1;
 }
+/** そのカテゴリに出場できない年齢でないかを見る。問題があれば説明を返す。
+ *  カテゴリは下位から上位への一方通行（62歳はミドルに出られるが、30歳はシニアに出られない）。
+ *  年度内に達する年齢で数えるため1歳ぶんの猶予を置き、明らかな取り違えだけを弾く。
+ *  取り込み時の名寄せ間違いは、たいていここに出る */
+function catAgeIssue(p, cat, dateStr){
+  const min = CAT_MIN_AGE[cat];
+  if (!min || !p || !p.birth) return null;
+  const age = ageAt(p, dateStr);
+  return age < min - 1
+    ? `${p.name} は${cat}（${min}歳以上）の年齢に達していません（この大会の時点で${age}歳）`
+    : null;
+}
 /** 古い成績にかける係数。`decay` は [{weeks, coef}] で、その週数より古ければその係数になる。
  *  空なら減衰なし（集計期間内はすべて等価） */
 function decayFactor(S, dateStr, asOf){
@@ -1761,6 +1773,8 @@ function saveEntry(approve){
   /* ドロー数が無いと係数が最下位のものに落ちて、黙って半分のポイントが付いてしまう */
   if (isRankedEvent(S, ev) && !draw)
     return toast('本戦ドロー数を入れてください。ポイントの計算に必要です。', 'error');
+  const bad = picks.map(p => catAgeIssue(P_BY_ID[p.pid], cat, t.date)).filter(Boolean);
+  if (bad.length) return toast(bad[0], 'error');
   const dup = DATA.results.some(r => r.tid===t.id && r.ev===ev && r.cat===cat && r.sex===sex);
   if (dup && !confirm('この大会・種目の結果はすでに登録されています。追加しますか？')) return;
   picks.forEach(p => {
@@ -1775,7 +1789,7 @@ function saveEntry(approve){
    ベスト16以下や全参加者まで記録できるようにするための入口。
    1枠ずつ選ぶUIでは現実的に入らないので、貼り付けで受ける。
    将来レーティングをやるなら全参加者の記録が要る（データは遡って作れない） */
-function parseBulk(text){
+function parseBulk(text, cat, dateStr){
   const rows = [], errs = [];
   /* 氏名は表記ゆれがあるので、選手IDとの一致を優先し、氏名は空白を無視して比べる */
   const norm = s => String(s || '').replace(/[\s　]/g, '');
@@ -1800,6 +1814,9 @@ function parseBulk(text){
     const p = byId.get(key) || (byName.has(norm(who)) ? byName.get(norm(who)) : undefined);
     if (p === null) return errs.push(`${i+1}行目：「${who}」は同姓同名が複数います。選手IDで指定してください`);
     if (!p) return errs.push(`${i+1}行目：「${who}」が名簿にありません。「選手」タブで先に登録してください`);
+    /* 年齢が合わない＝別人に当ててしまった可能性が高い。取り込みの誤りはここで出る */
+    const issue = cat && dateStr ? catAgeIssue(p, cat, dateStr) : null;
+    if (issue) return errs.push(`${i+1}行目：${issue}。同姓同名の別人ではありませんか`);
     rows.push({ place, pid: p.id, name: p.name, pref: p.pref });
   });
 
@@ -1825,7 +1842,7 @@ function bulkCheck(){
     box.innerHTML = '<p class="text-[12.5px] text-brand-red">この大会には結果を登録できる種目がありません。</p>';
     return;
   }
-  const { rows, errs } = parseBulk($('#eBulk').value);
+  const { rows, errs } = parseBulk($('#eBulk').value, cat, t.date);
 
   if (!rows.length && !errs.length){ box.innerHTML = ''; return toast('貼り付け欄が空です。', 'error'); }
   const head = `<p class="text-[12.5px] mb-2"><b>${esc(t.name)}</b>　${esc(ev)}・${esc(cat)}${sex!=='混合'?'・'+esc(sex):''}
