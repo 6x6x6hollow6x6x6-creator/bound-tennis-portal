@@ -191,6 +191,25 @@ check('全国ベスト4が県だけ回る選手より上', avg.全国ベスト4 
   `全国ベスト4 ${avg.全国ベスト4}pt > 県のみ ${avg.県だけ}pt`);
 check('有効大会数の上限が効いている', !rule.上限を超えている選手がいる, `上位${rule.有効大会数の上限}大会`);
 
+/* 古い成績の減衰。サンプルデータは1年分しかないので、基準日をずらして確かめる */
+const decay = await page.evaluate(() => {
+  const S = DATA.content.settings, as = S.asOf || todayStr();
+  const at = w => { const d = new Date(parseDate(as)); d.setDate(d.getDate() - w*7); return fmtDate(d); };
+  const before = decayFactor(S, at(10), as), after = decayFactor(S, at(60), as);
+  /* 基準日を1年進めると、いまの成績がすべて減衰対象になるはず */
+  const org = S.asOf;
+  const d = new Date(parseDate(as)); d.setFullYear(d.getFullYear() + 1);
+  S.asOf = fmtDate(d); applyData(DATA);
+  const faded = Object.values(BOARDS).flatMap(b => b.rows).flatMap(r => r.counted);
+  const ok = faded.length > 0 && faded.every(c => c.fade < 1);
+  S.asOf = org; applyData(DATA);   /* 後続の検査に影響しないよう戻す */
+  return { 期間: S.periodWeeks, 直近: before, 古い: after, 減衰が適用された: ok };
+});
+check('集計期間が2年', decay.期間 >= 104, `${decay.期間}週`);
+check('古い成績が減衰する', decay.直近 === 1 && decay.古い < 1,
+  `10週前 ×${decay.直近} / 60週前 ×${decay.古い}`);
+check('減衰が集計に反映される', decay.減衰が適用された);
+
 console.log('\n■ レスポンシブ');
 for (const [w, h, tag] of [[1360,1000,'PC'], [820,900,'タブレット'], [390,850,'スマホ']]){
   await page.setViewportSize({ width:w, height:h });
