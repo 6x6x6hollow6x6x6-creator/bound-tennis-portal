@@ -85,6 +85,47 @@ function readLiteral(s, i){
   return out;
 }
 
+/**
+ * 線（パス）を色つきで取り出す。
+ * ドロー表では**勝ち上がりの線が赤で描かれる**ので、色が分かれば
+ * 誰がどこまで勝ったかがそのまま読める。スコアの位置から推測する必要がない。
+ */
+export function extractPaths(path){
+  const raw = fs.readFileSync(path).toString('latin1');
+  const streams = streamsOf(raw);
+  const isContent = s => {
+    if (s.length < 40) return false;
+    const head = s.slice(0, 4000);
+    if ((head.match(/[\x20-\x7e\n\r\t]/g) || []).length / head.length < 0.85) return false;
+    const bt = (s.match(/\bBT\b/g) || []).length, et = (s.match(/\bET\b/g) || []).length;
+    return bt > 0 && Math.abs(bt - et) <= 1 && /\bT[jJ]\b/.test(s);
+  };
+  const pages = streams.filter(isContent);
+  const out = [];
+  pages.forEach((body, page) => {
+    const L = body.split(/\r?\n/).map(s => s.trim());
+    const nums = i => {
+      const n = [];
+      for (let j = i-1; j >= 0 && n.length < 6; j--){
+        if (/^-?[\d.]+$/.test(L[j])) n.unshift(parseFloat(L[j])); else break;
+      }
+      return n;
+    };
+    let cur = null, color = '0,0,0';
+    for (let i = 0; i < L.length; i++){
+      const op = L[i];
+      if (op === 'RG'){ const n = nums(i); if (n.length >= 3) color = n.slice(-3).join(','); continue; }
+      if (op !== 'm' && op !== 'l') continue;
+      const n = nums(i).slice(-2);
+      if (n.length < 2) continue;
+      const p = { x: n[0], y: n[1] };
+      if (op === 'm') cur = p;
+      else { if (cur) out.push({ x1:cur.x, y1:cur.y, x2:p.x, y2:p.y, color, page }); cur = p; }
+    }
+  });
+  return out;
+}
+
 export function extract(path){
   const raw = fs.readFileSync(path).toString('latin1');
   const streams = streamsOf(raw);

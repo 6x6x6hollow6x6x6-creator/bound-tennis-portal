@@ -13,7 +13,48 @@
  * 左半分は左から右へ、右半分は右から左へ勝ち上がるので、
  * ラウンドが進むほどスコアの x は中央に寄る。この向きも使って絞り込む。
  */
-import { extract } from './draw-pdf.mjs';
+import { extract, extractPaths } from './draw-pdf.mjs';
+
+/** 赤い線をたどって、各枠がどこまで勝ち上がったかを出す。
+ *  ドロー表は勝者の線を赤で描くので、氏名欄から出ている赤線の連結成分が
+ *  そのままその選手の勝ち上がりになる。スコアの位置から推測する必要がない。
+ *  戻り値は枠番号 → 勝った試合数。 */
+function redReach(path, halves){
+  const segs = extractPaths(path)
+    .filter(s => s.color === '1,0,0' && Math.hypot(s.x2-s.x1, s.y2-s.y1) < 200);
+  if (!segs.length) return null;
+
+  /* 横線と縦線に分ける。横線＝勝者の線、縦線＝次の段へのつなぎ */
+  const H = segs.filter(s => Math.abs(s.y1 - s.y2) < 1)
+    .map(s => ({ y: s.y1, a: Math.min(s.x1,s.x2), b: Math.max(s.x1,s.x2) }));
+  const V = segs.filter(s => Math.abs(s.x1 - s.x2) < 1 && Math.abs(s.y1 - s.y2) > 1)
+    .map(s => ({ x: s.x1, a: Math.min(s.y1,s.y2), b: Math.max(s.y1,s.y2) }));
+
+  const wins = new Map();
+  for (const half of halves){
+    const inward = half.side === 'L' ? 1 : -1;
+    /* 内側の端／外側の端 */
+    const inner = h => inward > 0 ? h.b : h.a;
+    const outer = h => inward > 0 ? h.a : h.b;
+    const close = (p,q) => Math.abs(p - q) < 4;
+
+    /* 氏名欄のすぐ内側から出ている赤線があれば、その枠は1回戦を勝っている。
+       ここは確実に読める。2回戦以降は線をたどる必要があり、まだ詰め切れていない
+       （縦線の並びが段ごとに揃っておらず、たどる途中で外れる）ので、
+       いまは「1回戦を勝ったかどうか」だけを使う */
+    const startX = half.players
+      .map(p => H.filter(h => close(h.y, p.y)).map(h => outer(h)))
+      .flat();
+    if (!startX.length) continue;
+    startX.sort((a,b) => inward * (a - b));
+    const edge = startX[0];                       /* 氏名欄の外側の端 */
+    for (const p of half.players){
+      const own = H.some(h => close(h.y, p.y) && close(outer(h), edge));
+      wins.set(p.no, own ? 1 : 0);
+    }
+  }
+  return wins;
+}
 
 const PREFS = ('北海道青森岩手宮城秋田山形福島茨城栃木群馬埼玉千葉東京神奈川新潟富山石川福井山梨長野'
   + '岐阜静岡愛知三重滋賀京都大阪兵庫奈良和歌山鳥取島根岡山広島山口徳島香川愛媛高知福岡佐賀長崎熊本大分宮崎鹿児島沖縄');
@@ -250,8 +291,14 @@ export function parseDraw(path, opt = {}){
   }
   /* 残りは、1勝でもしていれば1回戦突破、していなければ出場 */
   const wonAny = new Set(matches.map(m => m.winner.no));
+  /* 赤線からの判定も出せるが、いまはスコアからの判定と同程度（77%対74%）なので
+     切り替えていない。線をたどり切れれば2回戦以降も出せるはずで、そこが本命 */
+  const wins = null;
+
   const entries = halves.flatMap(h => h.players.map(p => ({
-    no: p.no, y: p.y, names: p.names, prefs: p.prefs, withdrawn: p.withdrawn, wonFirst: !!p.wonFirst,
+    no: p.no, y: p.y, names: p.names, prefs: p.prefs, withdrawn: p.withdrawn,
+    wins: wins ? (wins.get(p.no) || 0) : null,
+    wonFirst: !!p.wonFirst,
     place: p.withdrawn ? '欠場'
          : (place.get(p.no) || (wonAny.has(p.no) ? '1回戦突破' : '出場'))
   })));
