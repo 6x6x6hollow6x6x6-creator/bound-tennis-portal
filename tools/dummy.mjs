@@ -37,9 +37,11 @@ const PLAN = [
   { id:'TDUMMY2', name:'市民スポーツフェスティバル バウンドテニスの部', grade:'G4', pref:'長野',
     venue:'長野市真島総合スポーツアリーナ', date:'2026-06-07', host:'長野市体育協会',
     cats:['フリー','シニア'], evs:['ダブルス','団体戦'], draw:24 },
+  /* ミックスダブルスもここで見せる。全日本にはこの種目が無いので、
+     入れておかないと画面上どう出るか分からない */
   { id:'TDUMMY3', name:'月例オープン 多摩サーキット 第8戦', grade:'G5', pref:'東京',
     venue:'駒沢オリンピック公園総合運動場', date:'2026-05-24', host:'多摩バウンドテニス協会',
-    cats:['フリー'], evs:['シングルス','ダブルス'], draw:16 },
+    cats:['フリー'], evs:['シングルス','ダブルス','ミックスダブルス'], draw:16 },
   { id:'TDUMMY4', name:'かながわ親睦バウンドテニス大会', grade:'G5', pref:'神奈川',
     venue:'横浜市スポーツ医科学センター', date:'2026-05-10', host:'横浜バウンドテニスクラブ',
     cats:['フリー','ミドル'], evs:['ダブルス','団体戦','BTラリー戦'], draw:12 },
@@ -65,9 +67,38 @@ const PLAN = [
     fee:'1,500円', doc:true },
 ];
 
+/* お知らせのサンプル。カテゴリ・ピン留め・外部リンクを一通り使う。
+   日付は「今日」からの相対で決めるので、いつ見ても最近の話題として並ぶ */
+const NEWS = [
+  { back: 2, category:'重要', pinned:true,
+    title:'【サンプル】このサイトは検討用の試作です',
+    body:'掲載しているランキングは、公開されている全日本選手権の結果から機械的に算出した暫定値です。'
+       + '協会の決定事項ではありません。配点や集計ルールはご意見をいただきながら見直していきます。' },
+  { back: 6, category:'ランキング',
+    title:'【サンプル】BTPランキングを更新しました',
+    body:'第44回全日本バウンドテニス選手権大会の結果を反映しました。'
+       + '集計期間は直近104週で、52週より古い成績は半分の重みで計算しています。' },
+  { back: 13, category:'大会情報', doc:true,
+    title:'【サンプル】秋季オープン 多摩サーキット 第11戦のエントリーを受付中です',
+    body:'申込締切が近づいています。要項をご確認のうえ、各クラブの取りまとめ担当者へお申し込みください。' },
+  { back: 21, category:'大会結果',
+    title:'【サンプル】ふれあいバウンドテニス交流大会の結果を掲載しました',
+    body:'「大会結果」ページからご覧いただけます。交流大会のためランキングのポイント対象外ですが、'
+       + '出場記録として掲載しています。' },
+  { back: 34, category:'お知らせ',
+    title:'【サンプル】選手IDの記入にご協力ください',
+    body:'申込書に協会の登録番号をご記入いただくと、結果の照合が正確になります。'
+       + '同姓同名の方の取り違えを防ぐためにも、ご協力をお願いします。' },
+  { back: 52, category:'お知らせ',
+    title:'【サンプル】大会結果の提出について',
+    body:'主催者の皆さまへ。大会終了後14日以内に、入賞者とドロー数を事務局へご提出ください。'
+       + 'できるだけ全参加者の記録をお寄せいただけると、将来の集計方式の見直しに役立ちます。' },
+];
+
 export function addDummies(data){
   const tournaments = [...data.tournaments];
   const results = [...data.results];
+  const news = [...(data.news || [])];
   let rid = results.reduce((m,r) => Math.max(m, Number(String(r.id).replace(/\D/g,''))||0), 0);
 
   /* 都道府県ごとの選手。ブロック大会はその地域の選手を出す */
@@ -134,8 +165,12 @@ export function addDummies(data){
     };
     for (const ev of plan.evs){
       for (const cat of plan.cats){
-        for (const sex of (ev === '団体戦' ? ['男子'] : ['男子','女子'])){
-          const cand = all.filter(p => p.sex === (sex === '女子' ? '女' : '男') && canPlay(p, cat));
+        /* ミックスダブルスは男女共通の1区分なので「混合」 */
+        const sexes = ev === 'ミックスダブルス' ? ['混合']
+                    : ev === '団体戦' ? ['男子'] : ['男子','女子'];
+        for (const sex of sexes){
+          const cand = all.filter(p =>
+            (sex === '混合' || p.sex === (sex === '女子' ? '女' : '男')) && canPlay(p, cat));
           if (cand.length < 4) continue;
           const n = Math.min(PLACES.length, Math.max(4, Math.floor(plan.draw / 2)));
           const chosen = pick(cand, n);
@@ -149,7 +184,14 @@ export function addDummies(data){
       }
     }
   }
-  return { ...data, tournaments, results };
+  /* お知らせ。IDを NDUMMY で始めるので、本番前にまとめて外せる */
+  NEWS.forEach((n, i) => {
+    news.push({ id: 'NDUMMY' + (i + 1), date: shift(-n.back),
+                category: n.category, title: n.title, body: n.body,
+                url: n.doc ? DOC : '', pinned: !!n.pinned, published: true });
+  });
+
+  return { ...data, tournaments, results, news };
 }
 
 if (process.argv[1] && process.argv[1].endsWith('dummy.mjs')){

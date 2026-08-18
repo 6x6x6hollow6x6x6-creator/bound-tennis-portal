@@ -244,6 +244,25 @@ const res = await page.evaluate(() => {
 check('大会結果を区分で絞れる', res.区分 >= 2 && res.選択時 < res.すべて,
   `${res.区分}区分／1区分${res.選択時}行 → すべて${res.すべて}行`);
 
+/* ここから先は、実際に公開しているデータ（btp-import.json）で確かめる。
+   DEFAULT_DATA は架空のサンプルなので、取り込んだ本物の結果やダミー大会が入っていない。
+   ファイルが無い環境では DEFAULT_DATA のまま続ける（検査は自動で飛ぶ） */
+const IMPORT = path.join(HERE, '..', 'btp-import.json');
+if (fs.existsSync(IMPORT)){
+  console.log('\n■ 公開データ（btp-import.json）');
+  const loaded = await page.evaluate(d => {
+    DATA = normalise(d); applyData(DATA);
+    buildNav(); buildEventFilters(); buildRankFilters();
+    renderHome(); renderMonthChart(); renderNews(); renderAbout();
+    renderRanking(true); renderResults(true);
+    return { 大会: DATA.tournaments.length, 結果: DATA.results.length,
+             選手: DATA.players.length, お知らせ: DATA.news.length };
+  }, JSON.parse(fs.readFileSync(IMPORT, 'utf8')));
+  await page.waitForTimeout(600);
+  check('公開データを読み込める', loaded.結果 > 0,
+    `大会${loaded.大会} / 結果${loaded.結果} / 選手${loaded.選手} / お知らせ${loaded.お知らせ}`);
+}
+
 /* サンプル大会はランキングに影響しないこと。影響すると本物の順位と取り違えられる */
 const sample = await page.evaluate(() => {
   const t = DATA.tournaments.filter(t => isSample(t));
@@ -271,7 +290,39 @@ if (sample.大会){
   check('開催前のサンプル大会がある', up.件数 >= 2, `${up.件数}件／状態 ${up.状態.join('・')}`);
   check('要項と申込のリンクが付いている', up.要項 >= 1 && up.申込 >= 1,
     `要項${up.要項}件 / 申込${up.申込}件`);
+
+  /* お知らせも一通りの機能を使ったサンプルが入っていること */
+  const nw = await page.evaluate(() => {
+    const n = DATA.news.filter(x => String(x.id).startsWith('NDUMMY'));
+    return { 件数: n.length, カテゴリ: [...new Set(n.map(x => x.category))],
+             ピン留め: n.filter(x => x.pinned).length,
+             リンク付き: n.filter(x => safeUrl(x.url)).length };
+  });
+  if (nw.件数){
+    check('お知らせのサンプルがある', nw.件数 >= 4, `${nw.件数}件／${nw.カテゴリ.join('・')}`);
+    check('ピン留めと添付も使っている', nw.ピン留め >= 1 && nw.リンク付き >= 1,
+      `ピン留め${nw.ピン留め}件 / リンク${nw.リンク付き}件`);
+  }
+} else {
+  console.log('  --  サンプル大会が無いので、この節は飛ばした');
 }
+
+/* ランキングが空のとき、理由が分かる文言を出すこと。
+   「掲載のみの種目」と「絞り込みすぎ」は原因が違う */
+const empty = await page.evaluate(() => {
+  const S = DATA.content.settings;
+  const evs = [...new Set(DATA.results.filter(r => r.status === '承認済').map(r => r.ev))];
+  const listedOnly = evs.filter(ev => {
+    const rs = DATA.results.filter(r => r.status === '承認済' && r.ev === ev);
+    return rs.length && rs.every(r => {
+      const t = T_BY_ID[r.tid];
+      return !t || !awardedPoint(S, t.grade, r.place, r.draw || t.draw);
+    });
+  });
+  return { 掲載のみの種目: listedOnly };
+});
+check('掲載のみの種目を把握できる', Array.isArray(empty.掲載のみの種目),
+  empty.掲載のみの種目.length ? empty.掲載のみの種目.join('・') : 'なし');
 await page.keyboard.press('Escape');
 await page.waitForTimeout(300);
 

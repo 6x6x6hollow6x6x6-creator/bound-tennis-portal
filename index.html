@@ -979,7 +979,19 @@ function renderRanking(reset){
     + (board.holders ? `　（ほかに出場が少なくランキング対象外のポイント保有者 ${board.holders} 名）` : '');
   const t = $('#rankTable');
   if (!rows.length){
-    t.innerHTML = `<tbody><tr><td class="py-14 text-center text-ink-mute text-sm">該当する選手がいません。</td></tr></tbody>`;
+    /* 「該当なし」だけでは、掲載のみの種目なのか単に絞り込みすぎなのか分からない。
+       配点0の大会にしか記録が無い場合は、そう書く */
+    const [ev0, sex0, cat0] = key.split('|');
+    const same = DATA.results.filter(r => r.status === '承認済' && r.ev === ev0);
+    const onlyListed = same.length > 0 && same.every(r => {
+      const tt = T_BY_ID[r.tid];
+      return !tt || !awardedPoint(S, tt.grade, r.place, r.draw || tt.draw);
+    });
+    const msg = !pf && !q && onlyListed
+      ? `${esc(ev0)}は、いまのところ配点のある大会（公式戦）での記録がありません。<br>
+         交流大会での結果は「大会結果」のページに掲載しています。`
+      : (pf || q) ? '絞り込みの条件に合う選手がいません。' : '該当する選手がいません。';
+    t.innerHTML = `<tbody><tr><td class="py-14 text-center text-ink-mute text-sm leading-relaxed">${msg}</td></tr></tbody>`;
     $('#rankMore').hidden = true; return;
   }
   const page = rows.slice(0, rkShown);
