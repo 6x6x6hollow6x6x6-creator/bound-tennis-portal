@@ -404,7 +404,33 @@ const PREF2REGION = {}; Object.entries(REGIONS).forEach(([r, ps]) => ps.forEach(
 const PREFS = Object.keys(PREF2REGION);
 const gi = g => GRADES.indexOf(g);
 
-function ageAt(p, dateStr){ return parseDate(dateStr).getFullYear() - Number(p.birth || 0); }
+/** 生年が分かっていればその年齢。分からなければ null */
+function ageAt(p, dateStr){
+  return p && p.birth ? parseDate(dateStr).getFullYear() - Number(p.birth) : null;
+}
+/** 出場したカテゴリから分かる年齢の下限。シニアに出ていれば60歳以上、という理屈。
+ *  ドロー表からの取り込みでは生年が手に入らないので、これが唯一の手がかりになる */
+function minAgeOf(D, pid){
+  let min = 0;
+  for (const r of D.results){
+    if (r.pid !== pid) continue;
+    const m = CAT_MIN_AGE[r.cat] || 0;
+    if (m > min) min = m;
+  }
+  return min;
+}
+/** 集計や判定に使う年齢。生年が分かっていればそれ、なければ成績から推定した下限 */
+function effAge(p, dateStr){
+  const a = ageAt(p, dateStr);
+  return a !== null ? a : (P_MIN_AGE[p.id] || 0);
+}
+/** 画面に出す年齢。推定であることが分かるようにする */
+function ageText(p, dateStr){
+  const a = ageAt(p, dateStr);
+  if (a !== null) return `${a}歳`;
+  const m = P_MIN_AGE[p.id] || 0;
+  return m ? `${m}歳以上` : '年齢不明';
+}
 function drawCoef(S, draw){
   const rows = [...(S.drawCoef || [])].sort((a,b) => b.min - a.min);
   for (const r of rows) if (draw >= r.min) return r.coef;
@@ -483,7 +509,7 @@ function computeRankings(D, asOfArg){
        その成績がシニアのランキングに反映されない。
        年齢は集計基準日で見る。大会当日の年齢で判定すると、誕生日でカテゴリが上がった選手が
        直前までの成績を全部失い、移った先のランキングで最下位から始まってしまう */
-    const age = ageAt(p, as);
+    const age = effAge(p, as);
     for (const c of CATS)
       if (CAT_MIN_AGE[c] > CAT_MIN_AGE[r.cat] && age >= CAT_MIN_AGE[c])
         push(boardKey(r.ev, r.sex, c), r.pid, entry);
@@ -508,7 +534,7 @@ function computeRankings(D, asOfArg){
       const sub = counted.reduce((s,c) => s + c.pts, 0);
       const div = S.averaged === false ? 1 : Math.max(counted.length, S.minDivisor || 2);
       rows.push({
-        pid, name:p.name, kana:p.kana, pref:p.pref, age:ageAt(p, as),
+        pid, name:p.name, kana:p.kana, pref:p.pref, age:ageText(p, as),
         pts: Math.round(sub / div), sum: sub, div,
         counted, plays: v.comps.length,
         lastDate: sorted.reduce((m,c) => c.date > m ? c.date : m, ''),
@@ -571,7 +597,7 @@ function tournamentStatus(t, as){
      ① Apps Script API   ② localStorage のキャッシュ   ③ コード内のデフォルト
    ===================================================================== */
 let DATA = null, S = null, AS = '', BOARDS = {}, HISTORY = {}, GL = {};
-let T_BY_ID = {}, P_BY_ID = {};
+let T_BY_ID = {}, P_BY_ID = {}, P_MIN_AGE = {};
 let DATA_SOURCE = 'default';   /* 'api' | 'cache' | 'default' */
 
 function normalise(raw){
@@ -595,7 +621,10 @@ function normalise(raw){
     t.draw = Number(t.draw) || 0;
     if (!t.deadline) t.deadline = t.date;
   });
-  d.players.forEach(p => { p.birth = Number(p.birth) || 1990; });
+  /* 生年は「不明」を許す。ドロー表には氏名と都道府県しか載っておらず、
+     取り込んだ選手の生年は分からない。ここで既定値を入れると、
+     シニアの選手が若者として扱われて出場資格の検査に全部弾かれる */
+  d.players.forEach(p => { p.birth = Number(p.birth) || null; });
   d.results.forEach(r => { r.draw = Number(r.draw) || 0; if (!r.status) r.status = '承認済'; });
   return d;
 }
@@ -652,6 +681,8 @@ function applyData(d){
   GL = S.gradeLabels || {};
   T_BY_ID = Object.fromEntries(DATA.tournaments.map(t => [t.id, t]));
   P_BY_ID = Object.fromEntries(DATA.players.map(p => [p.id, p]));
+  /* 生年不明の選手のために、成績から年齢の下限を先に出しておく */
+  P_MIN_AGE = Object.fromEntries(DATA.players.map(p => [p.id, minAgeOf(DATA, p.id)]));
   BOARDS = computeRankings(DATA);
   HISTORY = buildHistory(DATA, 12);
 }
@@ -942,7 +973,7 @@ function renderRanking(reset){
       <td class="px-3 py-3 text-xl font-bold tnum ${r.rank===1?'text-brand-red':'text-navy'}">${r.rank}</td>
       <td class="px-2 py-3">${deltaCell(r.rank, prevRank(key, r.pid))}</td>
       <td class="px-3 py-3"><div class="text-[15px] font-bold tracking-wide">${esc(r.name)}</div>
-        <div class="text-[11px] text-ink-mute">${r.age}歳${r.kana ? '　'+esc(r.kana) : ''}</div></td>
+        <div class="text-[11px] text-ink-mute">${esc(r.age)}${r.kana ? '　'+esc(r.kana) : ''}</div></td>
       <td class="px-3 py-3 hidden md:table-cell">${esc(r.pref)}</td>
       <td class="px-3 py-3 text-right text-[17px] font-bold text-navy tnum">${fmtN(r.pts)}</td>
       <td class="px-3 py-3 text-right tnum hidden md:table-cell">${r.counted.length} / ${r.plays}</td>
@@ -999,7 +1030,7 @@ function openPlayer(pid, key){
     .sort((a,b) => b.t.date.localeCompare(a.t.date));
   openModal(
     `<h3 class="text-[19px] font-bold">${esc(p.name)}
-       <span class="block text-xs font-normal opacity-75 mt-1">${esc(p.pref)}／${ageAt(p, AS)}歳／選手ID ${esc(p.regno || p.id)}</span></h3>`,
+       <span class="block text-xs font-normal opacity-75 mt-1">${esc(p.pref)}／${esc(ageText(p, AS))}／選手ID ${esc(p.regno || p.id)}</span></h3>`,
     `<p class="text-xs text-ink-mute">${esc(key.replace(/\|/g,' ／ '))}　現在
        <b class="text-navy text-base">${row ? row.rank + '位' : '—'}</b>　${row ? fmtN(row.pts) + ' pt' : ''}</p>
      <h4 class="text-sm font-bold mt-4 mb-2">集計期間内の戦績（${all.length}件）</h4>
@@ -1921,22 +1952,25 @@ function drawPList(){
       <td class="px-3 py-2"><div class="text-[13.5px] font-bold">${esc(p.name)}</div>
         <div class="text-[11px] text-ink-mute">${esc(p.regno || p.id)}</div></td>
       <td class="px-3 py-2 text-[11px] whitespace-nowrap">${esc(p.pref)}</td>
-      <td class="px-3 py-2 text-right text-[11px] tnum">${ageAt(p, AS)}</td>
+      <td class="px-3 py-2 text-right text-[11px] tnum whitespace-nowrap">${esc(ageText(p, AS)).replace("歳","")}</td>
       <td class="px-3 py-2 text-right text-[11px] tnum">${DATA.results.filter(r => r.pid === p.id).length}</td></tr>`).join('')}</tbody>`;
   $$('#pTable [data-p]').forEach(tr => tr.addEventListener('click', () => drawPForm(tr.dataset.p)));
 }
 function drawPForm(id){
   const p = DATA.players.find(x => x.id === id);
   admEditP = p ? p.id : null;
-  const b = p || { id:'', regno:'', name:'', kana:'', pref:'東京', sex:'男', birth:new Date().getFullYear()-30, active:true };
+  const b = p || { id:'', regno:'', name:'', kana:'', pref:'東京', sex:'男', birth:null, active:true };
   $('#pFormId').textContent = p ? `ID ${p.id}　出場 ${DATA.results.filter(r => r.pid === p.id).length} 件` : '「この内容にする」で新しいIDが振られます';
   $('#pForm').innerHTML =
     field('氏名', `<input id="pfName" type="text" class="${INP}" value="${esc(b.name)}">`) +
     field('かな', `<input id="pfKana" type="text" class="${INP}" value="${esc(b.kana)}">`) +
     field('選手ID（表示用）', `<input id="pfRegno" type="text" class="${INP} max-w-[220px]" value="${esc(b.regno)}">`, '協会の登録番号。空欄でも動きます。') +
     field('所属 / 性別', `<div class="flex gap-2 flex-wrap">${selectHtml('pfPref', PREFS, b.pref)}${selectHtml('pfSex', ['男','女'], b.sex)}</div>`) +
-    field('生年', `<input id="pfBirth" type="number" class="${INP} max-w-[120px]" value="${esc(b.birth)}">`,
-      `年齢カテゴリの判定に使います（${CATS.map(c => c+' '+CAT_MIN_AGE[c]+'歳〜').join(' / ')}）`) +
+    field('生年', `<input id="pfBirth" type="number" class="${INP} max-w-[120px]" value="${esc(b.birth || '')}" placeholder="不明なら空欄">`,
+      `年齢カテゴリの判定に使います（${CATS.map(c => c+' '+CAT_MIN_AGE[c]+'歳〜').join(' / ')}）。`
+      + (p && !p.birth && P_MIN_AGE[p.id]
+          ? `いまは空欄のため、出場したカテゴリから「${P_MIN_AGE[p.id]}歳以上」と推定して集計しています。`
+          : '空欄でも動きます。その場合は出場したカテゴリから年齢の下限を推定します。')) +
     field('登録状態', `<label class="inline-flex items-center gap-2 text-[13px]">
       <input id="pfActive" type="checkbox"${b.active !== false ? ' checked':''}>現役（結果登録の候補に出す）</label>`);
   $('#pDel').style.display = p ? '' : 'none';
@@ -1944,7 +1978,7 @@ function drawPForm(id){
 function saveP(){
   const v = id => $('#'+id).value.trim();
   const o = { name:v('pfName'), kana:v('pfKana'), regno:v('pfRegno'), pref:v('pfPref'),
-              sex:v('pfSex'), birth:Number(v('pfBirth'))||1990, active:$('#pfActive').checked };
+              sex:v('pfSex'), birth:Number(v('pfBirth')) || null, active:$('#pfActive').checked };
   if (!o.name) return alert('氏名を入力してください。');
   if (admEditP) Object.assign(DATA.players.find(x => x.id === admEditP), o);
   else { o.id = nextId(DATA.players, 'P', 4); if (!o.regno) o.regno = o.id; DATA.players.push(o); admEditP = o.id; }

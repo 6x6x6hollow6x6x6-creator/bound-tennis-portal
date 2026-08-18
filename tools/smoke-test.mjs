@@ -251,6 +251,29 @@ check('境界は猶予を持たせる', elig.境界は通す, '年度内に達�
 check('資格のある登録は通す', elig.資格ありは通す && elig.年上は下位に出られる,
   '年上の選手が下位カテゴリに出るのは可');
 
+/* 生年不明の選手。ドロー表には氏名と都道府県しか無いので、取り込みでは必ずこうなる。
+   出場したカテゴリから年齢の下限を推定して集計できること */
+const unk = await page.evaluate(() => {
+  const y = Number((DATA.content.settings.asOf || todayStr()).slice(0,4));
+  DATA.players.push({ id:'PU', name:'生年不明', regno:'', pref:'石川', sex:'男', birth:null, active:true });
+  const t = { id:'TU', name:'検証', grade:'G2', pref:'石川', venue:'', date:`${y-1}-06-01`,
+              deadline:'', cats:CATS, evs:['シングルス'], draw:32, fee:'', host:'',
+              entryUrl:'', docUrl:'', published:true };
+  DATA.tournaments.push(t, { ...t, id:'TU2', date:`${y-1}-11-01` });
+  DATA.results.push(
+    { id:'RU1', tid:'TU',  ev:'シングルス', cat:'シニア', sex:'男子', draw:32, place:'優勝', pid:'PU', status:'承認済' },
+    { id:'RU2', tid:'TU2', ev:'シングルス', cat:'ミドル', sex:'男子', draw:32, place:'優勝', pid:'PU', status:'承認済' });
+  applyData(DATA);
+  const has = cat => (BOARDS[`シングルス|男子|${cat}`]?.rows || []).some(r => r.pid === 'PU');
+  return { 推定下限: P_MIN_AGE['PU'], 表示: ageText(P_BY_ID['PU'], DATA.content.settings.asOf || todayStr()),
+           ミドル: has('ミドル'), シニア: has('シニア'), フリー: has('フリー'),
+           既定値が入らない: P_BY_ID['PU'].birth === null };
+});
+check('生年不明でも既定値を入れない', unk.既定値が入らない, '1990年生まれ扱いにしない');
+check('出場カテゴリから年齢を推定', unk.推定下限 === 60, `「${unk.表示}」と表示`);
+check('推定でカテゴリ跨ぎが効く', unk.ミドル && unk.シニア && !unk.フリー,
+  'シニア出場歴があるのでミドルの成績もシニアに入る');
+
 console.log('\n■ レスポンシブ');
 for (const [w, h, tag] of [[1360,1000,'PC'], [820,900,'タブレット'], [390,850,'スマホ']]){
   await page.setViewportSize({ width:w, height:h });
