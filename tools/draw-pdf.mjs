@@ -56,6 +56,17 @@ function buildCmap(streams){
 }
 
 /** PDFのリテラル文字列。エスケープと入れ子の括弧を処理する */
+/** リテラル文字列の終わり（閉じ括弧の次）の位置 */
+function skipLiteral(s, i){
+  let depth = 1;
+  while (i < s.length && depth > 0){
+    if (s[i] === '\\'){ i += 2; continue; }
+    if (s[i] === '(') depth++;
+    else if (s[i] === ')') depth--;
+    i++;
+  }
+  return i;
+}
 function readLiteral(s, i){
   let depth = 1, out = '';
   while (i < s.length && depth > 0){
@@ -78,34 +89,95 @@ export function extract(path){
   const raw = fs.readFileSync(path).toString('latin1');
   const streams = streamsOf(raw);
   const cmap = buildCmap(streams);
-  const toText = bytes => {
-    let s = '';
+  /* 2バイトのCIDが基本だが、1バイトで引くフォントもあるので取れたほうを使う */
+  const two = bytes => { let s = '';
     for (let i = 0; i + 1 < bytes.length; i += 2)
       s += cmap.get((bytes.charCodeAt(i) << 8) | bytes.charCodeAt(i+1)) ?? '';
-    return s;
+    return s; };
+  const one = bytes => { let s = '';
+    for (let i = 0; i < bytes.length; i++) s += cmap.get(bytes.charCodeAt(i)) ?? '';
+    return s; };
+  const toText = bytes => { const a = two(bytes), b = one(bytes);
+    return a.length >= b.length ? a : b; };
+  const toTextHex = hex => {
+    const pairs = (hex.match(/.{1,4}/g) || []);
+    let s = '';
+    for (const h of pairs) s += cmap.get(parseInt(h.padEnd(4,'0'), 16)) ?? '';
+    if (s.trim()) return s;
+    let b = '';
+    for (const h of (hex.match(/.{1,2}/g) || [])) b += cmap.get(parseInt(h, 16)) ?? '';
+    return b;
   };
 
-  const content = streams.find(s => /\bT[Jj]\b/.test(s)) || '';
-  const lines = content.split(/\r?\n/);
+  /* 本文のストリームを選ぶ。展開できなかったバイナリにも "Tj" の並びが偶然含まれるので、
+     印字可能な文字の割合と、BT/ET の対応で見分ける。
+     本文が複数に分かれている場合もあるので、条件に合うものを連結する */
+  const isContent = s => {
+    if (s.length < 40) return false;
+    const head = s.slice(0, 4000);
+    const printable = (head.match(/[\x20-\x7e\n\r\t]/g) || []).length / head.length;
+    if (printable < 0.85) return false;
+    const bt = (s.match(/\bBT\b/g) || []).length, et = (s.match(/\bET\b/g) || []).length;
+    return bt > 0 && Math.abs(bt - et) <= 1 && /\bT[jJ]\b/.test(s);
+  };
+  const content = streams.filter(isContent).join('\n');
+
+  /* 内容ストリームをトークンに分けて読む。
+     生成元によって「数値を1行ずつ出す」ものと「1行にまとめる」ものがあるので、
+     行ではなくトークン単位で見る。年をまたぐと生成元が変わるため一般化しておく */
   const items = [];
-  let x = 0, y = 0, pend = null;
-  for (let i = 0; i < lines.length; i++){
-    const ln = lines[i].trim();
-    /* この生成器は行列の各数値を別行に出すので、Tm から6つさかのぼる */
-    if (ln === 'Tm'){
-      const nums = [];
-      for (let j = i-1; j >= 0 && nums.length < 6; j--){
-        const v = lines[j].trim();
-        if (/^-?[\d.]+$/.test(v)) nums.unshift(parseFloat(v)); else break;
+  const st = [];                    /* オペランドのスタック */
+  let tm = [1,0,0,1,0,0], tlm = tm, leading = 0;
+  const put = txt => {
+    const t = String(txt).trim();
+    if (t) items.push({ x: Math.round(tm[4]*10)/10, y: Math.round(tm[5]*10)/10, t });
+  };
+  const translate = (m, tx, ty) => [m[0], m[1], m[2], m[3], m[4] + tx*m[0] + ty*m[2], m[5] + tx*m[1] + ty*m[3]];
+
+  for (let i = 0; i < content.length; ){
+    const c = content[i];
+    if (c === ' ' || c === '\n' || c === '\r' || c === '\t'){ i++; continue; }
+    if (c === '%'){ while (i < content.length && content[i] !== '\n') i++; continue; }
+    if (c === '('){ const s = readLiteral(content, i+1); st.push({ str: s });
+      i = skipLiteral(content, i+1); continue; }
+    if (c === '<' && content[i+1] !== '<'){
+      const e = content.indexOf('>', i);
+      st.push({ hex: content.slice(i+1, e).replace(/\s/g, '') }); i = e + 1; continue;
+    }
+    if (c === '[' || c === ']'){ st.push({ arr: c }); i++; continue; }
+    if (c === '<' || c === '/'){                    /* 辞書や名前は読み飛ばす */
+      if (c === '/'){ let j = i+1; while (j < content.length && !/[\s\/\[\]<>()]/.test(content[j])) j++;
+        st.push({ name: content.slice(i+1, j) }); i = j; continue; }
+      i += 2; continue;
+    }
+    let j = i;
+    while (j < content.length && !/[\s\/\[\]<>()%]/.test(content[j])) j++;
+    const tok = content.slice(i, j);
+    i = j > i ? j : i + 1;      /* 区切り文字そのもの（>> など）で止まらないように必ず進める */
+    if (!tok) continue;
+    if (/^-?[\d.]+$/.test(tok)){ st.push({ num: parseFloat(tok) }); continue; }
+
+    const nums = st.filter(s => 'num' in s).map(s => s.num);
+    switch (tok){
+      case 'BT': tm = tlm = [1,0,0,1,0,0]; break;
+      case 'Tm': if (nums.length >= 6) tm = tlm = nums.slice(-6); break;
+      case 'Td': if (nums.length >= 2) tm = tlm = translate(tlm, nums.at(-2), nums.at(-1)); break;
+      case 'TD': if (nums.length >= 2){ leading = -nums.at(-1); tm = tlm = translate(tlm, nums.at(-2), nums.at(-1)); } break;
+      case 'TL': if (nums.length) leading = nums.at(-1); break;
+      case 'T*': tm = tlm = translate(tlm, 0, -leading); break;
+      case 'Tj': case '\'': case '"': {
+        const s = st.filter(v => 'str' in v || 'hex' in v).at(-1);
+        if (s) put('str' in s ? toText(s.str) : toTextHex(s.hex));
+        break;
       }
-      if (nums.length === 6){ x = nums[4]; y = nums[5]; }
+      case 'TJ': {
+        let s = '';
+        for (const v of st){ if ('str' in v) s += toText(v.str); else if ('hex' in v) s += toTextHex(v.hex); }
+        put(s);
+        break;
+      }
     }
-    if (ln.startsWith('(')) pend = toText(readLiteral(lines.slice(i).join('\n'), 1));
-    if (ln === 'Tj' && pend !== null){
-      const t = pend.trim();
-      if (t) items.push({ x: Math.round(x*10)/10, y: Math.round(y*10)/10, t });
-      pend = null;
-    }
+    st.length = 0;
   }
   return items;
 }
