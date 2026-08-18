@@ -163,6 +163,32 @@ check('勝ち数の計算が正しい', win.ベスト16_32名 === 1 && win.優�
 check('勝った選手のほうが点が高い', win.三勝したベスト8 > win.出ただけの入賞,
   `3勝ベスト8 ${win.三勝したベスト8}pt > 出ただけの入賞 ${win.出ただけの入賞}pt`);
 check('配点0のグレードは集計に入らない', !rule.配点0のグレードが混ざっている);
+
+/* 平均方式。合計方式だと、予選を免除されるシード選手が出場数の差で沈む */
+const avg = await page.evaluate(() => {
+  const S = DATA.content.settings;
+  const rows = Object.values(BOARDS).flatMap(b => b.rows);
+  const bad = rows.filter(r => r.pts !== Math.round(r.sum / r.div));
+  const divWrong = rows.filter(r => r.div !== Math.max(r.counted.length, S.minDivisor || 2));
+  /* この方式が何のためにあるかを直接確かめる。
+     シード選手（全国大会にしか出ない）が、予選から積み上げた選手に抜かれないこと */
+  const d = n => Math.max(n, S.minDivisor || 2);
+  const score = list => Math.round(list.reduce((a,b) => a+b, 0) / d(list.length));
+  const 全国優勝   = score([awardedPoint(S,'G1','優勝',32)]);
+  const 全国ベスト4 = score([awardedPoint(S,'G1','ベスト4',32)]);
+  const 積み上げ   = score([awardedPoint(S,'G3','優勝',24), awardedPoint(S,'G3','優勝',24),
+                            awardedPoint(S,'G2','優勝',32), awardedPoint(S,'G3','優勝',32)]);
+  const 県だけ     = score([awardedPoint(S,'G3','優勝',32), awardedPoint(S,'G3','準優勝',24),
+                            awardedPoint(S,'G3','ベスト4',24)]);
+  return { averaged: S.averaged !== false, 計算が合わない: bad.length, 除数が違う: divWrong.length,
+           全国優勝, 全国ベスト4, 積み上げ, 県だけ };
+});
+check('平均方式が有効', avg.averaged);
+check('平均の計算が合っている', avg.計算が合わない === 0 && avg.除数が違う === 0, '合計÷max(採用数, 下限)');
+check('全国優勝が積み上げより上', avg.全国優勝 > avg.積み上げ,
+  `全国優勝 ${avg.全国優勝}pt > 予選から積み上げ ${avg.積み上げ}pt`);
+check('全国ベスト4が県だけ回る選手より上', avg.全国ベスト4 > avg.県だけ,
+  `全国ベスト4 ${avg.全国ベスト4}pt > 県のみ ${avg.県だけ}pt`);
 check('有効大会数の上限が効いている', !rule.上限を超えている選手がいる, `上位${rule.有効大会数の上限}大会`);
 
 console.log('\n■ レスポンシブ');
