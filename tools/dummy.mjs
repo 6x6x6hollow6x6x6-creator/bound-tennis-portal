@@ -1,11 +1,14 @@
 /**
- * たたき台用のダミー大会を作る
+ * たたき台用のサンプル交流大会を作る
  *
  *   node tools/dummy.mjs <取り込みJSON> [出力先]
  *
  * 実データ（全日本選手権）だけだと大会が2つしかなく、
- * 都道府県大会やブロック大会が入ったときの見え方が分からない。
- * 協会に見せるときに動きが伝わるよう、架空の大会を足す。
+ * 地方の交流大会が並んだときの見え方が分からない。
+ *
+ * **作るのは交流大会（G4・G5）だけ。配点が0なのでランキングには影響しない。**
+ * 公式戦のサンプルは作らない。架空の成績で順位が動くと、
+ * 見せられた側が本物の順位と取り違える恐れがあるため。
  *
  * **架空と分かるようにする。** 大会名の頭に「【サンプル】」を付け、
  * 主催も「（架空の大会です）」とする。ダミーだけを消したいときは
@@ -19,23 +22,25 @@ import fs from 'fs';
 const PLACES = ['優勝','準優勝','ベスト4','ベスト4','ベスト8','ベスト8','ベスト8','ベスト8',
                 'ベスト16','ベスト16','ベスト16','ベスト16','1回戦突破','1回戦突破','出場','出場'];
 
-/* 大会の型。実在の大会構成に寄せてある */
+/* 交流大会だけを作る。**G4・G5は配点が0なのでランキングには一切影響しない。**
+   全国の大会の9割はこの手の交流大会で、ポータルとしての本体はここ。
+   団体戦やBTラリー戦を含む、実際にありそうな構成にしてある */
 const PLAN = [
-  { id:'TDUMMY1', name:'関東ブロックバウンドテニス大会', grade:'G2', pref:'埼玉',
-    venue:'さいたま市記念総合体育館', date:'2026-06-14', host:'関東バウンドテニス連盟',
-    cats:['フリー','ミドル','シニア'], evs:['シングルス','ダブルス'], draw:32 },
-  { id:'TDUMMY2', name:'北信越ブロックバウンドテニス大会', grade:'G2', pref:'長野',
-    venue:'長野市真島総合スポーツアリーナ', date:'2026-06-07', host:'北信越バウンドテニス連盟',
-    cats:['フリー','ミドル','シニア'], evs:['シングルス','ダブルス'], draw:24 },
-  { id:'TDUMMY3', name:'石川県バウンドテニス選手権', grade:'G3', pref:'石川',
-    venue:'金沢市総合体育館', date:'2026-05-17', host:'石川県バウンドテニス協会',
-    cats:['フリー','ミドル','シニア'], evs:['シングルス','ダブルス'], draw:20 },
-  { id:'TDUMMY4', name:'神奈川県バウンドテニス選手権', grade:'G3', pref:'神奈川',
-    venue:'横浜文化体育館', date:'2026-05-10', host:'神奈川県バウンドテニス協会',
-    cats:['フリー','ミドル','シニア'], evs:['シングルス','ダブルス'], draw:36 },
-  { id:'TDUMMY5', name:'月例オープン 多摩サーキット 第8戦', grade:'G5', pref:'東京',
-    venue:'駒沢オリンピック公園総合運動場', date:'2026-04-19', host:'多摩バウンドテニス協会',
-    cats:['フリー'], evs:['シングルス','ダブルス','団体戦'], draw:16 },
+  { id:'TDUMMY1', name:'ふれあいバウンドテニス交流大会', grade:'G4', pref:'石川',
+    venue:'野々市市民体育館', date:'2026-06-21', host:'野々市バウンドテニス協会',
+    cats:['フリー','ミドル','シニア'], evs:['ダブルス','団体戦'], draw:18 },
+  { id:'TDUMMY2', name:'市民スポーツフェスティバル バウンドテニスの部', grade:'G4', pref:'長野',
+    venue:'長野市真島総合スポーツアリーナ', date:'2026-06-07', host:'長野市体育協会',
+    cats:['フリー','シニア'], evs:['ダブルス','団体戦'], draw:24 },
+  { id:'TDUMMY3', name:'月例オープン 多摩サーキット 第8戦', grade:'G5', pref:'東京',
+    venue:'駒沢オリンピック公園総合運動場', date:'2026-05-24', host:'多摩バウンドテニス協会',
+    cats:['フリー'], evs:['シングルス','ダブルス'], draw:16 },
+  { id:'TDUMMY4', name:'かながわ親睦バウンドテニス大会', grade:'G5', pref:'神奈川',
+    venue:'横浜市スポーツ医科学センター', date:'2026-05-10', host:'横浜バウンドテニスクラブ',
+    cats:['フリー','ミドル'], evs:['ダブルス','団体戦','BTラリー戦'], draw:12 },
+  { id:'TDUMMY5', name:'北信越シニアフレンドリー大会', grade:'G4', pref:'富山',
+    venue:'富山市総合体育館', date:'2026-04-26', host:'富山県バウンドテニス協会 北部支部',
+    cats:['シニア'], evs:['ダブルス','団体戦'], draw:14 },
 ];
 
 export function addDummies(data){
@@ -60,6 +65,18 @@ export function addDummies(data){
     return byPref.get(t.pref) || [];
   };
 
+  /* 生年不明の選手は「出場したカテゴリ」から年齢の下限が推定される。
+     実際に出たことのないカテゴリにサンプルで出すと、その推定が変わり、
+     **実データのカテゴリ跨ぎが動いてランキングが変わってしまう。**
+     だから、その選手が実データで出ているカテゴリにしか割り当てない */
+  const LEVEL = { 'フリー':0, 'ミドル':1, 'シニア':2 };
+  const topCat = new Map();
+  for (const r of data.results){
+    const lv = LEVEL[r.cat] ?? 0;
+    if (lv > (topCat.get(r.pid) ?? -1)) topCat.set(r.pid, lv);
+  }
+  const canPlay = (p, cat) => (topCat.get(p.id) ?? 0) >= (LEVEL[cat] ?? 0);
+
   for (const plan of PLAN){
     const t = { ...plan, name: `【サンプル】${plan.name}`,
                 deadline: plan.date, fee: '2,500円',
@@ -68,10 +85,10 @@ export function addDummies(data){
     delete t.id; t.id = plan.id;
     tournaments.push(t);
 
-    const cand = pool(plan);
-    if (!cand.length) continue;
+    const all = pool(plan);
+    if (!all.length) continue;
     let seed = plan.id.length;                    /* 実行ごとに変わらないよう固定 */
-    const pick = n => {
+    const pick = (cand, n) => {
       const out = [], used = new Set();
       for (let i = 0; i < n && used.size < cand.length; i++){
         seed = (seed * 1103515245 + 12345) % 2147483648;
@@ -84,10 +101,10 @@ export function addDummies(data){
     for (const ev of plan.evs){
       for (const cat of plan.cats){
         for (const sex of (ev === '団体戦' ? ['男子'] : ['男子','女子'])){
-          const men = cand.filter(p => p.sex === (sex === '女子' ? '女' : '男'));
-          if (men.length < 4) continue;
+          const cand = all.filter(p => p.sex === (sex === '女子' ? '女' : '男') && canPlay(p, cat));
+          if (cand.length < 4) continue;
           const n = Math.min(PLACES.length, Math.max(4, Math.floor(plan.draw / 2)));
-          const chosen = pick(n).filter(p => p.sex === (sex === '女子' ? '女' : '男'));
+          const chosen = pick(cand, n);
           chosen.forEach((p, i) => {
             rid++;
             results.push({ id: 'R' + String(rid).padStart(5,'0'), tid: plan.id,

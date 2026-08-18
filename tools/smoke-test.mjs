@@ -243,6 +243,23 @@ const res = await page.evaluate(() => {
 });
 check('大会結果を区分で絞れる', res.区分 >= 2 && res.選択時 < res.すべて,
   `${res.区分}区分／1区分${res.選択時}行 → すべて${res.すべて}行`);
+
+/* サンプル大会はランキングに影響しないこと。影響すると本物の順位と取り違えられる */
+const sample = await page.evaluate(() => {
+  const t = DATA.tournaments.filter(t => isSample(t));
+  const rs = DATA.results.filter(r => isSample(T_BY_ID[r.tid]));
+  const pts = [...new Set(rs.map(r => awardedPoint(DATA.content.settings,
+    T_BY_ID[r.tid].grade, r.place, r.draw)))];
+  const inRank = Object.values(BOARDS).flatMap(b => b.rows)
+    .flatMap(r => r.counted).filter(c => isSample(T_BY_ID[c.tid])).length;
+  return { 大会: t.length, 結果: rs.length, 配点: pts, 算入: inRank,
+           印がある: t.every(x => /サンプル/.test(x.name)) };
+});
+if (sample.大会){
+  check('サンプル大会に印がある', sample.印がある, `${sample.大会}大会`);
+  check('サンプルはランキングに入らない', sample.算入 === 0 && sample.配点.every(p => p === 0),
+    `結果${sample.結果}件はすべて0pt`);
+}
 await page.keyboard.press('Escape');
 await page.waitForTimeout(300);
 
