@@ -105,6 +105,26 @@ if (local){
     await page.click(`#admTabs [data-tab="${tab}"]`); await page.waitForTimeout(400);
     check(`管理タブ ${tab}`, (await page.locator('#admBody').innerHTML()).length > 200);
   }
+  /* まとめて貼り付け。ベスト16以下や全参加者を入れる唯一の実用的な入口なので、
+     誤りが候補に残らないことまで見る */
+  await page.click('#admTabs [data-tab="results"]'); await page.waitForTimeout(500);
+  const tid = await page.evaluate(() =>
+    DATA.tournaments.find(t => t.evs.includes('シングルス') && t.grade === 'G2').id);
+  await page.selectOption('#eTour', tid); await page.waitForTimeout(500);
+  const who = await page.evaluate(() => DATA.players.slice(0,3).map(p => p.regno || p.id));
+  const nR = await page.evaluate(() => DATA.results.length);
+  await page.fill('#eBulk', [`優勝,${who[0]}`, `ベスト16\t${who[1]}`, `出場,${who[2]}`,
+                             `優勝,名簿にいない人`, `出場,${who[0]}`].join('\n'));
+  await page.click('#eBulkCheck'); await page.waitForTimeout(500);
+  const bulk = await page.evaluate(() => ({
+    候補: document.querySelectorAll('#eBulkResult tbody tr').length,
+    エラー表示: /登録できません/.test(document.querySelector('#eBulkResult').innerText)
+  }));
+  check('貼り付けの誤りを弾く', bulk.候補 === 2 && bulk.エラー表示,
+    `候補${bulk.候補}名（名簿外1件と重複1名を除外して2名が正しい）`);
+  await page.click('#eBulkSave'); await page.waitForTimeout(600);
+  check('貼り付けで一括登録できる', (await page.evaluate(() => DATA.results.length)) === nR + 2);
+
   await page.click('#admSave'); await page.waitForTimeout(600);
   check('保存できる', (await page.locator('#admDirty').isHidden()));
 } else {

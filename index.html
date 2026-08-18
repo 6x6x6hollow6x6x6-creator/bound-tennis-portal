@@ -1606,6 +1606,21 @@ function admResults(){
         <button id="eSave" class="${BTN_S}">承認待ちとして登録</button>
         <button id="eApprove" class="${BTN_P}">登録して承認する</button>
         <span id="eMsg" class="text-xs text-ink-mute"></span></div>
+
+      <div class="border-t border-rule mt-7 pt-6">
+        <h4 class="text-sm font-bold mb-1">まとめて貼り付ける</h4>
+        <p class="text-[12.5px] text-ink-soft mb-3 leading-relaxed">
+          ベスト16以下や全参加者まで入れるときはこちら。1行に1名、<b class="text-ink">成績,選手IDまたは氏名</b> の順で貼り付けます。
+          表計算ソフトからそのままコピーできます（タブ区切りも可）。<br>
+          上の「大会 / 種目 / カテゴリ / 性別 / ドロー数」の指定はそのまま使われます。</p>
+        <textarea id="eBulk" rows="7" class="${INP} font-mono text-[12px]"
+          placeholder="優勝,BT-21-00000&#10;準優勝,山田 太郎&#10;ベスト4,BT-20-00185&#10;ベスト4,BT-23-00370&#10;出場,BT-25-00555"></textarea>
+        <div class="flex gap-2.5 mt-3 flex-wrap items-center">
+          <button id="eBulkCheck" class="${BTN_S}">内容を確認する</button>
+          <span class="text-[11px] text-ink-mute">成績に使える語：${esc(PLACES.join(' / '))}</span>
+        </div>
+        <div id="eBulkResult" class="mt-4"></div>
+      </div>
     </div>`;
 
   $$('[data-okk]').forEach(b => b.addEventListener('click', () => {
@@ -1642,6 +1657,7 @@ function admResults(){
   ['eTour','eEv','eCat','eDraw'].forEach(id => $('#'+id).addEventListener('change', syncEntry));
   $('#eSave').addEventListener('click', () => saveEntry(false));
   $('#eApprove').addEventListener('click', () => saveEntry(true));
+  $('#eBulkCheck').addEventListener('click', bulkCheck);
   syncEntry();
 }
 function syncEntry(){
@@ -1712,6 +1728,104 @@ function saveEntry(approve){
   });
   markDirty(); applyData(DATA); admResults();
   toast(approve ? '登録して承認しました。' : '承認待ちとして登録しました。');
+}
+
+/* ===== まとめて貼り付け =====
+   ベスト16以下や全参加者まで記録できるようにするための入口。
+   1枠ずつ選ぶUIでは現実的に入らないので、貼り付けで受ける。
+   将来レーティングをやるなら全参加者の記録が要る（データは遡って作れない） */
+function parseBulk(text){
+  const rows = [], errs = [];
+  /* 氏名は表記ゆれがあるので、選手IDとの一致を優先し、氏名は空白を無視して比べる */
+  const norm = s => String(s || '').replace(/[\s　]/g, '');
+  const byId = new Map(), byName = new Map();
+  DATA.players.forEach(p => {
+    if (p.regno) byId.set(norm(p.regno).toUpperCase(), p);
+    byId.set(norm(p.id).toUpperCase(), p);
+    const k = norm(p.name);
+    byName.set(k, byName.has(k) ? null : p);   /* 同姓同名は決められないので null にして弾く */
+  });
+
+  text.split(/\r?\n/).forEach((line, i) => {
+    const raw = line.trim();
+    if (!raw) return;
+    const cells = raw.split(/[,\t]/).map(s => s.trim()).filter(Boolean);
+    if (cells.length < 2) return errs.push(`${i+1}行目：「成績,選手IDまたは氏名」の形になっていません（${raw}）`);
+    /* 列の順番が逆でも読めるようにする */
+    let place = cells.find(c => PLACES.includes(c));
+    if (!place) return errs.push(`${i+1}行目：成績「${cells[0]}」が分かりません`);
+    const who = cells.filter(c => c !== place)[0] || '';
+    const key = norm(who).toUpperCase();
+    const p = byId.get(key) || (byName.has(norm(who)) ? byName.get(norm(who)) : undefined);
+    if (p === null) return errs.push(`${i+1}行目：「${who}」は同姓同名が複数います。選手IDで指定してください`);
+    if (!p) return errs.push(`${i+1}行目：「${who}」が名簿にありません。「選手」タブで先に登録してください`);
+    rows.push({ place, pid: p.id, name: p.name, pref: p.pref });
+  });
+
+  /* 同じ選手が複数行にいると、どちらの成績が正しいか決められない。
+     片方を勝手に採ると誤ったポイントが入るので、その選手は丸ごと候補から外す */
+  const count = new Map();
+  rows.forEach(r => count.set(r.pid, (count.get(r.pid) || 0) + 1));
+  const dup = [...count.entries()].filter(([, n]) => n > 1).map(([pid]) => pid);
+  dup.forEach(pid => {
+    const rs = rows.filter(r => r.pid === pid);
+    errs.push(`${rs[0].name} が${rs.length}回出ています（${rs.map(r => r.place).join('／')}）。どれか1つに絞ってください`);
+  });
+  return { rows: rows.filter(r => !dup.includes(r.pid)), errs };
+}
+function bulkCheck(){
+  const t = DATA.tournaments.find(x => x.id === $('#eTour').value);
+  const box = $('#eBulkResult');
+  if (!t) return;
+  const ev = $('#eEv').value, cat = $('#eCat').value, sex = $('#eSex').value;
+  const draw = Number($('#eDraw').value) || Number(t.draw) || 0;
+  const ranked = isRankedEvent(S, ev);
+  if (!ev){
+    box.innerHTML = '<p class="text-[12.5px] text-brand-red">この大会には結果を登録できる種目がありません。</p>';
+    return;
+  }
+  const { rows, errs } = parseBulk($('#eBulk').value);
+
+  if (!rows.length && !errs.length){ box.innerHTML = ''; return toast('貼り付け欄が空です。', 'error'); }
+  const head = `<p class="text-[12.5px] mb-2"><b>${esc(t.name)}</b>　${esc(ev)}・${esc(cat)}${sex!=='混合'?'・'+esc(sex):''}
+    ドロー${draw || '未入力'}　<b>${rows.length}</b>名を登録します</p>`;
+  const errHtml = errs.length ? `<div class="bg-paper border-l-4 border-brand-red px-4 py-3 mb-3 text-[12.5px] leading-relaxed">
+    <b class="text-brand-red block mb-1">${errs.length} 件は登録できません</b>${errs.map(esc).join('<br>')}</div>` : '';
+  const table = rows.length ? `<div class="overflow-x-auto"><table class="w-full text-sm min-w-[420px]">
+    <thead><tr class="bg-navy text-white text-[11px]"><th class="text-left px-3 py-2 w-24">成績</th>
+      <th class="text-left px-3 py-2">選手</th><th class="text-left px-3 py-2 w-20">所属</th>
+      <th class="text-right px-3 py-2 w-20">ポイント</th></tr></thead>
+    <tbody>${rows.map(r => `<tr class="border-b border-rule">
+      <td class="px-3 py-1.5 text-[12px] whitespace-nowrap">${esc(r.place)}</td>
+      <td class="px-3 py-1.5 text-[13px] font-bold">${esc(r.name)}</td>
+      <td class="px-3 py-1.5 text-[11px] whitespace-nowrap">${esc(r.pref)}</td>
+      <td class="px-3 py-1.5 text-right text-[12px] tnum ${ranked ? '' : 'text-ink-mute'}">${
+        ranked ? fmtN(awardedPoint(S, t.grade, r.place, draw)) : '—'}</td></tr>`).join('')}</tbody></table></div>` : '';
+  const btns = rows.length ? `<div class="flex gap-2.5 mt-4 flex-wrap">
+    <button id="eBulkSave" class="${BTN_S}">この${rows.length}名を承認待ちとして登録</button>
+    <button id="eBulkApprove" class="${BTN_P}">登録して承認する</button></div>` : '';
+  box.innerHTML = head + errHtml + table + btns;
+  if (rows.length){
+    $('#eBulkSave').addEventListener('click', () => bulkSave(rows, false));
+    $('#eBulkApprove').addEventListener('click', () => bulkSave(rows, true));
+  }
+}
+function bulkSave(rows, approve){
+  const t = DATA.tournaments.find(x => x.id === $('#eTour').value);
+  const ev = $('#eEv').value, cat = $('#eCat').value, sex = $('#eSex').value;
+  if (!ev) return toast('この大会には結果を登録できる種目がありません。', 'error');
+  const draw = Number($('#eDraw').value) || Number(t.draw) || 0;
+  if (isRankedEvent(S, ev) && !draw)
+    return toast('本戦ドロー数を入れてください。ポイントの計算に必要です。', 'error');
+  const already = DATA.results.filter(r => r.tid===t.id && r.ev===ev && r.cat===cat && r.sex===sex);
+  if (already.length && !confirm(`この大会・種目にはすでに ${already.length} 件の結果があります。追加しますか？`)) return;
+  rows.forEach(r => {
+    DATA.results.push({ id: nextId(DATA.results, 'R', 5), tid:t.id, ev, cat, sex, draw,
+      place:r.place, pid:r.pid, status: approve ? '承認済' : '承認待ち', submitted: todayStr(), note:'' });
+  });
+  $('#eBulk').value = '';
+  markDirty(); applyData(DATA); admResults();
+  toast(`${rows.length}名を${approve ? '登録して承認しました。' : '承認待ちとして登録しました。'}`);
 }
 
 /* ===== 選手 ===== */
