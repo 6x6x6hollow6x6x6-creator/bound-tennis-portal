@@ -45,6 +45,22 @@ const isSubseq = (short, full) => {
 };
 const nameHit = (a, b) => a === b || isSubseq(a, b) || isSubseq(b, a);
 
+/** 上位8位に入らなかった選手の段を、勝ち数から決める。
+ *  base はベスト8の選手の勝ち数。そこから1つ下がるごとに1段下がる。
+ *  勝ち数と段の対応は大会の規模で変わる（ダブルスは枠が少なく段も浅い）ので、
+ *  固定の対応表ではなく公式の値で目盛りを合わせる */
+function belowBest8(wins, base){
+  if (wins === null || wins === undefined) return '出場';
+  if (!wins) return '出場';
+  if (base === null) return '1回戦突破';
+  const down = base - wins;                 /* ベスト8から何段下か */
+  /* 公式の上位8位に入っていない以上、ベスト8より上にはなりえない。
+     勝ち数が同じでもベスト16どまりとして扱う（読み取りが多めに出たとき安全側に倒す） */
+  if (down <= 1) return 'ベスト16';
+  if (down === 2) return 'ベスト32';
+  return '1回戦突破';
+}
+
 /** 成績結果の氏名を、ドロー表の氏名に結びつける */
 function findEntry(entries, names, pref){
   const same = e => e.names.length === names.length;
@@ -107,14 +123,21 @@ export function build(dir){
 
       /* まず全員を「出場」で登録する */
       const placeOf = new Map();
+      const winsOf = new Map();
       const be = best.find(x => x.ev === f.ev && x.cat === f.cat && x.sex === f.sex);
       if (be){
         for (const r of be.results){
           const e = findEntry(d.entries, r.names, r.pref);
-          if (e) placeOf.set(e.no, r.place);
+          if (e){ placeOf.set(e.no, r.place); if (r.place === 'ベスト8') winsOf.set(e.no, e.wins); }
           else log.push(`${tag} ${f.ev}${f.cat}${f.sex}: 「${r.names.join('・')}」が名簿に見つからず（${r.place}）`);
         }
       } else log.push(`${tag} ${f.ev}${f.cat}${f.sex}: 成績結果が無いので順位なし`);
+
+      /* ベスト8の選手が何勝しているかを基準にして、それより下の段を決める。
+         勝ち数と段の対応は大会の規模で変わるので、公式の値で目盛りを合わせる */
+      const w8 = [...winsOf.values()].filter(v => v > 0);
+      const base = w8.length ? Math.min(...w8) : null;
+      if (base === null) log.push(`${tag} ${f.ev}${f.cat}${f.sex}: 基準が取れず、8位より下は1回戦突破/出場のみ`);
 
       for (const e of d.entries){
         /* 欠場の判定はドロー表の「欠」の位置から推測しているので外すことがある。
@@ -123,10 +146,7 @@ export function build(dir){
           log.push(`${tag} ${f.ev}${f.cat}${f.sex}: ${e.names.join('・')} は欠場として除外`);
           continue;
         }
-        /* 上位8位は公式の値。それ以外は、1回戦を勝ったかどうかだけ使う。
-           2回戦以降は勝ち上がりの木が要るが、復元が当たらなかったので使わない
-           （公式の優勝者22名の勝ち数が平均1.3勝になってしまう） */
-        const place = placeOf.get(e.no) || (e.wonFirst ? '1回戦突破' : '出場');
+        const place = placeOf.get(e.no) || belowBest8(e.wins, base);
         e.names.forEach((n, i) => {
           const p = getPlayer(n, e.prefs[i] || e.prefs[0] || '', f.sex);
           rid++;

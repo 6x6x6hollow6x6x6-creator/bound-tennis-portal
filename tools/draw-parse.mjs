@@ -20,8 +20,10 @@ import { extract, extractPaths } from './draw-pdf.mjs';
  *  そのままその選手の勝ち上がりになる。スコアの位置から推測する必要がない。
  *  戻り値は枠番号 → 勝った試合数。 */
 function redReach(path, halves){
+  /* 決勝に近い段の縦線は何行分もまたぐので長い。短いものだけに絞ると
+     そこで道が切れてしまう。除きたいのはページ枠だけなので、上限は大きく取る */
   const segs = extractPaths(path)
-    .filter(s => s.color === '1,0,0' && Math.hypot(s.x2-s.x1, s.y2-s.y1) < 200);
+    .filter(s => s.color === '1,0,0' && Math.hypot(s.x2-s.x1, s.y2-s.y1) < 700);
   if (!segs.length) return null;
 
   /* 横線と縦線に分ける。横線＝勝者の線、縦線＝次の段へのつなぎ */
@@ -38,19 +40,33 @@ function redReach(path, halves){
     const outer = h => inward > 0 ? h.a : h.b;
     const close = (p,q) => Math.abs(p - q) < 4;
 
-    /* 氏名欄のすぐ内側から出ている赤線があれば、その枠は1回戦を勝っている。
-       ここは確実に読める。2回戦以降は線をたどる必要があり、まだ詰め切れていない
-       （縦線の並びが段ごとに揃っておらず、たどる途中で外れる）ので、
-       いまは「1回戦を勝ったかどうか」だけを使う */
-    const startX = half.players
-      .map(p => H.filter(h => close(h.y, p.y)).map(h => outer(h)))
-      .flat();
-    if (!startX.length) continue;
-    startX.sort((a,b) => inward * (a - b));
-    const edge = startX[0];                       /* 氏名欄の外側の端 */
+    /* 氏名欄から出ている赤線を起点に、縦線をたどって内側へ進む。
+       縦線1本が1試合。線が途切れたところが、その選手が負けた段になる */
+    /* 赤線は枠の氏名より少し上に引かれる。そのずれは大会や種目で変わる
+       （第44回は3.5、第43回のダブルスは4.9）ので、起点を探すときだけ広めに取る。
+       枠の間隔の3分の1までなら隣の行を拾う心配はない */
+    const gap = half.players.length > 1
+      ? Math.min(...half.players.slice(1).map((p,i) => Math.abs(p.y - half.players[i].y)))
+      : 30;
+    const tol = Math.max(4, Math.min(12, gap / 3));
+
     for (const p of half.players){
-      const own = H.some(h => close(h.y, p.y) && close(outer(h), edge));
-      wins.set(p.no, own ? 1 : 0);
+      let cur = H.filter(h => Math.abs(h.y - p.y) < tol)
+        .sort((a,b) => inward * (outer(a) - outer(b)))[0];
+      if (!cur){ wins.set(p.no, 0); continue; }   /* 赤線が無い＝1回戦で負けた */
+
+      let n = 1, guard = 0;                        /* 赤線があること自体が1勝ぶん */
+      while (guard++ < 20){
+        const v = V.find(v => close(v.x, inner(cur)) && cur.y > v.a - 4 && cur.y < v.b + 4);
+        if (!v) break;
+        /* 縦線の反対側の端へ移り、そこから内側へ続く横線を探す */
+        const to = Math.abs(v.a - cur.y) > Math.abs(v.b - cur.y) ? v.a : v.b;
+        const next = H.find(h => close(h.y, to) && close(outer(h), v.x)
+          && inward * (inner(h) - inner(cur)) > 1);
+        if (!next) break;
+        cur = next; n++;
+      }
+      wins.set(p.no, n);
     }
   }
   return wins;
@@ -291,9 +307,9 @@ export function parseDraw(path, opt = {}){
   }
   /* 残りは、1勝でもしていれば1回戦突破、していなければ出場 */
   const wonAny = new Set(matches.map(m => m.winner.no));
-  /* 赤線からの判定も出せるが、いまはスコアからの判定と同程度（77%対74%）なので
-     切り替えていない。線をたどり切れれば2回戦以降も出せるはずで、そこが本命 */
-  const wins = null;
+  /* 赤線をたどって勝ち数を出す。ドロー表は勝者の線を赤で描くので、
+     スコアの位置から推測するより確実 */
+  const wins = redReach(path, halves);
 
   const entries = halves.flatMap(h => h.players.map(p => ({
     no: p.no, y: p.y, names: p.names, prefs: p.prefs, withdrawn: p.withdrawn,

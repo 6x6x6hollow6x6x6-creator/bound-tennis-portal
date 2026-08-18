@@ -160,6 +160,26 @@ const win = await page.evaluate(() => ({
 check('勝ち数0の入賞は出場扱い', win.ベスト4_4名 === 0 && win.準優勝_2名 === 0);
 check('勝ち数の計算が正しい', win.ベスト16_32名 === 1 && win.優勝_32名 === 5,
   `32名ドロー：ベスト16=${win.ベスト16_32名}勝 / 優勝=${win.優勝_32名}勝`);
+
+/* 成績の段が配点表と揃っていること。段を足したのに配点が無いと黙って0点になる */
+const places = await page.evaluate(() => {
+  const S = DATA.content.settings;
+  const miss = [];
+  for (const g of GRADES)
+    for (const p of PLACES)
+      if (S.points[g] && S.points[g][p] === undefined) miss.push(`${g}/${p}`);
+  /* 上の段ほど高い点であること */
+  const bad = [];
+  for (const g of GRADES){
+    const v = PLACES.map(p => Number((S.points[g]||{})[p]) || 0);
+    for (let i = 1; i < v.length; i++) if (v[i] > v[i-1]) bad.push(`${g}:${PLACES[i]}`);
+  }
+  return { 段: PLACES.length, 配点なし: miss, 逆転: bad };
+});
+check('すべての成績に配点がある', places.配点なし.length === 0,
+  places.配点なし.length ? places.配点なし.slice(0,3).join(' / ') : `${places.段}段`);
+check('配点が段の順に並んでいる', places.逆転.length === 0,
+  places.逆転.length ? places.逆転.slice(0,3).join(' / ') : '上の段ほど高い');
 check('勝った選手のほうが点が高い', win.三勝したベスト8 > win.出ただけの入賞,
   `3勝ベスト8 ${win.三勝したベスト8}pt > 出ただけの入賞 ${win.出ただけの入賞}pt`);
 check('配点0のグレードは集計に入らない', !rule.配点0のグレードが混ざっている);
