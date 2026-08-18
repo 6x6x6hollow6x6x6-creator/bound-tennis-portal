@@ -104,6 +104,28 @@ export function build(dir){
   const log = [];
   let pid = 0, rid = 0;
 
+  let mergedTotal = 0;
+  /** 所属が読み取れなかった選手を、同姓同名で所属のある選手に寄せる。
+   *  寄せ先が複数あるときは別人の可能性があるのでそのままにする。
+   *  大会ごとに呼ぶ。まとめて最後にやると、次の大会の照合時に
+   *  「所属あり／なし」の2件が候補として残り、決められなくなる */
+  const mergeBlankPref = () => {
+    const byName = new Map();
+    for (const p of players.values()){
+      if (!byName.has(p.name)) byName.set(p.name, []);
+      byName.get(p.name).push(p);
+    }
+    const alias = new Map();
+    for (const [, list] of byName){
+      const withPref = list.filter(p => p.pref), without = list.filter(p => !p.pref);
+      if (withPref.length === 1 && without.length)
+        for (const p of without){ alias.set(p.id, withPref[0].id); mergedTotal++; }
+    }
+    if (!alias.size) return;
+    for (const r of results) if (alias.has(r.pid)) r.pid = alias.get(r.pid);
+    for (const [k, p] of players) if (alias.has(p.id)) players.delete(k);
+  };
+
   const keyOf = (name, pref) => `${name}|${pref}`;
   const getPlayer = (name, pref, sex) => {
     const k = keyOf(name, pref);
@@ -131,9 +153,15 @@ export function build(dir){
     const b8 = path.join(dir, `${tag}-best8.pdf`);
     if (fs.existsSync(b8)) best = parseBest8(b8);
 
-    for (const f of mine){
-      const d = parseDraw(f.out);
+    /* ドロー表を先に読む。読めた種目から処理して選手を登録し、
+       所属の空白を統合してから、ドロー表の無い種目の照合に入る */
+    const parsed = mine.map(f => ({ f, d: parseDraw(f.out) }));
+    const ordered = [...parsed.filter(x => x.d), ...parsed.filter(x => !x.d)];
+    let mergedForTag = false;
+
+    for (const { f, d } of ordered){
       if (!d){
+        if (!mergedForTag){ mergeBlankPref(); mergedForTag = true; }
         /* ドロー表が読めなくても、成績結果に載っていれば上位8位だけは入れられる。
            第44回のフリー女子は協会サイトに分割版の一部しか公開されていない。
            氏名は成績結果側で文字が抜けるので、別の大会・種目で登録済みの選手に寄せる */
@@ -149,7 +177,13 @@ export function build(dir){
               (p.name === nm || isSubseq(nm, p.name)) &&
               (!r.pref || !p.pref || p.pref.includes(cleanPref(r.pref)) || cleanPref(r.pref).includes(p.pref)));
             const p = known.length === 1 ? known[0] : getPlayer(nm, cleanPref(r.pref), f.sex);
-            if (known.length !== 1) log.push(`${tag} ${f.ev}${f.cat}${f.sex}: 「${nm}」は照合できず、そのまま登録`);
+            /* 候補ゼロは「その大会が初出場」というだけで問題ではない。
+               候補が複数あるときだけ、別人に当てている恐れがある */
+            if (known.length > 1)
+              log.push(`⚠ ${tag} ${f.ev}${f.cat}${f.sex}: 「${nm}」の候補が${known.length}人いる` +
+                `（${known.map(k => `${k.name}/${k.pref}`).join('、')}）。新規として登録した`);
+            else if (known.length === 0 && nm.length <= 3)
+              log.push(`⚠ ${tag} ${f.ev}${f.cat}${f.sex}: 「${nm}」は姓か名が欠けている可能性がある`);
             rid++;
             results.push({ id: 'R' + String(rid).padStart(5,'0'), tid: t.id,
                            ev: f.ev, cat: f.cat, sex: f.sex, draw: est,
@@ -202,26 +236,7 @@ export function build(dir){
     }
   }
 
-  /* 所属が読み取れなかった選手を、同姓同名で所属のある選手に寄せる。
-     寄せ先が複数あるときは別人の可能性があるので、そのままにする */
-  let merged = 0;
-  const byName = new Map();
-  for (const p of players.values()){
-    if (!byName.has(p.name)) byName.set(p.name, []);
-    byName.get(p.name).push(p);
-  }
-  const alias = new Map();
-  for (const [, list] of byName){
-    const withPref = list.filter(p => p.pref), without = list.filter(p => !p.pref);
-    if (withPref.length === 1 && without.length){
-      for (const p of without){ alias.set(p.id, withPref[0].id); merged++; }
-    }
-  }
-  if (alias.size){
-    for (const r of results) if (alias.has(r.pid)) r.pid = alias.get(r.pid);
-    for (const [k, p] of players) if (alias.has(p.id)) players.delete(k);
-  }
-  log.push(`所属が空だった選手を同姓同名に統合: ${merged}件`);
+  log.push(`所属が空だった選手を同姓同名に統合: ${mergedTotal}件`);
 
   /* 同じ大会・同じ区分に同じ選手が2件入っていないか（取り違えの目印になる） */
   const seen = new Set(), dup = [];
