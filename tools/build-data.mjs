@@ -18,8 +18,20 @@
  */
 import fs from 'fs';
 import path from 'path';
+import { fileURLToPath } from 'url';
 import { parseDraw } from './draw-parse.mjs';
 import { parseBest8 } from './best8.mjs';
+
+/** index.html の DEFAULT_DATA から content（配点・集計ルールとサイト文言）を取り出す。
+ *  これを入れずに読み込むと、スプレッドシートに残っている古い設定が生き続けて
+ *  集計期間や掲載条件が食い違う（実際に第43回が期間外に落ちて全員が消えた） */
+function currentContent(){
+  const here = path.dirname(fileURLToPath(import.meta.url));
+  const src = fs.readFileSync(path.join(here, '..', 'index.html'), 'utf8');
+  const m = src.match(/const DEFAULT_DATA = (\{.*\});/);
+  if (!m) return null;
+  return JSON.parse(m[1]).content;
+}
 
 const norm = s => String(s || '').replace(/[\s　]/g, '');
 
@@ -155,7 +167,15 @@ export function build(dir){
   }
   if (dup.length) log.push(`⚠ 同じ区分に二重登録: ${dup.length}件`);
 
-  return { tournaments, players: [...players.values()], results, log };
+  const content = currentContent();
+  if (content){
+    /* 掲載中の注意バーは、取り込み後は実データになるので文言を変える */
+    content.site = { ...content.site,
+      noticeBar: '検討用の試作サイトです。全日本選手権の公開資料から取り込んだ暫定集計です。' };
+    log.push('配点・集計ルールとサイト文言も index.html の内容で入れ替える');
+  } else log.push('⚠ index.html から設定を取り出せなかった');
+
+  return { tournaments, players: [...players.values()], results, content, log };
 }
 
 if (process.argv[1] && process.argv[1].endsWith('build-data.mjs')){
@@ -168,6 +188,6 @@ if (process.argv[1] && process.argv[1].endsWith('build-data.mjs')){
   r.results.forEach(x => byPlace[x.place] = (byPlace[x.place]||0)+1);
   console.log('順位の内訳:', Object.entries(byPlace).map(([k,v])=>`${k} ${v}`).join(' / '));
   fs.writeFileSync(out, JSON.stringify({ tournaments: r.tournaments, players: r.players,
-                                         results: r.results, news: [] }));
+                                         results: r.results, news: [], content: r.content }));
   console.log(`\n${out} に書き出しました`);
 }
