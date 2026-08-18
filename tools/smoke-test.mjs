@@ -8,19 +8,36 @@
  * CDNには実際に取りに行くので、ネットにつながる環境で実行すること。
  * （CDNに出られない環境では STUB_CDN=1 を付けると、見た目は崩れるが動作だけ確認できる）
  *
- * これは画面の回帰テストなので、Apps Script へは行かせず、必ずコード内の
- * DEFAULT_DATA で動かす。本番のスプレッドシートが空だったり中身が入れ替わったりしても
- * テストの結果が変わらないようにするため。
- * API との疎通を見たいときは USE_API=1 を付ける（件数系の項目は落ちることがある）。
+ * これは画面の回帰テストなので、既定では SHEETS_API_URL と GOOGLE_CLIENT_ID を空にした
+ * 複製を読み込ませる。理由は2つ。
+ *   ・本番のスプレッドシートの中身でテスト結果が変わらないようにする（DEFAULT_DATA で走らせる）
+ *   ・管理画面を「お試しモード」で開いて確認できるようにする
+ *     （本番設定のままだとGoogleサインインが要るので、管理画面のテストが丸ごと飛んでしまう）
+ * 本番の設定そのままで見たいときは USE_API=1 を付ける。
+ * ただし件数系の項目はスプレッドシートの中身しだいで落ちるし、
+ * file:// は生成元として登録できないのでサインインのエラーが出る。
  */
 import { chromium } from 'playwright';
 import path from 'path';
+import fs from 'fs';
+import os from 'os';
 import { fileURLToPath } from 'url';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
-const FILE = 'file://' + path.join(HERE, '..', 'index.html');
+const REAL = path.join(HERE, '..', 'index.html');
 const STUB = process.env.STUB_CDN === '1';
 const USE_API = process.env.USE_API === '1';
+
+/* 設定を空にした複製を作る。index.html 自体は書き換えない */
+let TMP = null, FILE = 'file://' + REAL;
+if (!USE_API){
+  const src = fs.readFileSync(REAL, 'utf8')
+    .replace(/const SHEETS_API_URL = '[^']*';/,   "const SHEETS_API_URL = '';")
+    .replace(/const GOOGLE_CLIENT_ID = '[^']*';/, "const GOOGLE_CLIENT_ID = '';");
+  TMP = path.join(os.tmpdir(), 'bt-gas-smoke.html');
+  fs.writeFileSync(TMP, src);
+  FILE = 'file://' + TMP;
+}
 
 const problems = [];
 const check = (label, ok, detail) => {
@@ -33,17 +50,8 @@ const browser = await chromium.launch(
   process.env.PW_CHROMIUM ? { executablePath: process.env.PW_CHROMIUM } : {});
 const page = await browser.newPage({ viewport: { width: 1360, height: 1000 } });
 page.on('pageerror', e => problems.push('JSエラー: ' + e.message));
-page.on('console', m => {
-  if (m.type() !== 'error') return;
-  /* 上で意図的に止めた Apps Script へのリクエストの分は数えない */
-  if (!USE_API && (m.location()?.url || '').includes('script.google.com')) return;
-  problems.push('コンソールエラー: ' + m.text());
-});
+page.on('console', m => { if (m.type() === 'error') problems.push('コンソールエラー: ' + m.text()); });
 page.on('dialog', d => d.accept());
-
-/* Apps Script を止める。フロントは3段フォールバックなので DEFAULT_DATA まで落ちてくれる
-   （新しいブラウザコンテキストなので localStorage のキャッシュも無い） */
-if (!USE_API) await page.route('https://script.google.com/**', r => r.abort());
 
 if (STUB){
   await page.route('https://cdn.tailwindcss.com*', r =>
@@ -100,8 +108,28 @@ if (local){
   await page.click('#admSave'); await page.waitForTimeout(600);
   check('保存できる', (await page.locator('#admDirty').isHidden()));
 } else {
-  console.log('  -- APIが設定されているため、お試しモードのテストはスキップ');
+  console.log('  -- USE_API=1 のためスキップ（本番設定ではGoogleサインインが要る）');
 }
+
+console.log('\n■ 集計ルール');
+/* 団体戦・BTラリー戦と、配点0のグレードがランキングに混ざっていないこと。
+   ここが崩れると「掲載のみ」の約束が破れる */
+const rule = await page.evaluate(() => {
+  const S = DATA.content.settings;
+  const rankEvs = S.rankEvents || EVENTS_LIST;
+  const zeroGrades = GRADES.filter(g => !PLACES.some(pl => Number((S.points[g]||{})[pl]) > 0));
+  const counted = Object.values(BOARDS).flatMap(b => b.rows).flatMap(r => r.counted);
+  return {
+    対象種目: rankEvs,
+    区分に対象外の種目がある: Object.keys(BOARDS).some(k => !rankEvs.includes(k.split('|')[0])),
+    配点0のグレードが混ざっている: counted.some(c => zeroGrades.includes(c.grade)),
+    有効大会数の上限: S.topN,
+    上限を超えている選手がいる: Object.values(BOARDS).flatMap(b => b.rows).some(r => r.counted.length > S.topN)
+  };
+});
+check('ランキング区分は対象種目だけ', !rule.区分に対象外の種目がある, rule.対象種目.join('／'));
+check('配点0のグレードは集計に入らない', !rule.配点0のグレードが混ざっている);
+check('有効大会数の上限が効いている', !rule.上限を超えている選手がいる, `上位${rule.有効大会数の上限}大会`);
 
 console.log('\n■ レスポンシブ');
 for (const [w, h, tag] of [[1360,1000,'PC'], [820,900,'タブレット'], [390,850,'スマホ']]){
