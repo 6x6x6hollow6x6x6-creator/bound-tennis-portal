@@ -261,6 +261,23 @@ if (fs.existsSync(IMPORT)){
   await page.waitForTimeout(600);
   check('公開データを読み込める', loaded.結果 > 0,
     `大会${loaded.大会} / 結果${loaded.結果} / 選手${loaded.選手} / お知らせ${loaded.お知らせ}`);
+
+  /* ダブルスに他カテゴリの点が混ざっていないこと。混ざると、その区分に一度も出ていない
+     選手が上位に並ぶ（実例：フリーで若い相方と組んだ選手がミドルの5位に載っていた） */
+  const carry = await page.evaluate(() => {
+    let 混入 = 0, 跨ぎ = 0;
+    for (const [k, bd] of Object.entries(BOARDS)){
+      const [ev, , cat] = k.split('|');
+      for (const r of bd.rows){
+        const other = r.counted.filter(c => c.cat !== cat).length;
+        if (!other) continue;
+        if (isPairEvent(DATA.content.settings, ev)) 混入++; else 跨ぎ++;
+      }
+    }
+    return { 混入, 跨ぎ };
+  });
+  check('ダブルスに他カテゴリの点が混ざらない', carry.混入 === 0,
+    carry.混入 ? `${carry.混入}件混ざっている` : `シングルスの持ち上がりは${carry.跨ぎ}件`);
 }
 
 /* サンプル大会はランキングに影響しないこと。影響すると本物の順位と取り違えられる */
@@ -357,18 +374,24 @@ const cross = await page.evaluate(() => {
   DATA.tournaments.push(t, { ...t, id:'TX2', date:`${y-2}-12-01` });
   DATA.results.push(
     { id:'RX1', tid:'TX1', ev:'シングルス', cat:'ミドル', sex:'男子', draw:32, place:'優勝', pid:'PX1', status:'承認済' },
-    { id:'RX2', tid:'TX2', ev:'シングルス', cat:'フリー', sex:'男子', draw:32, place:'優勝', pid:'PX2', status:'承認済' });
+    { id:'RX2', tid:'TX2', ev:'シングルス', cat:'フリー', sex:'男子', draw:32, place:'優勝', pid:'PX2', status:'承認済' },
+    /* ダブルスは同じ形でも跨がないこと。ペアのカテゴリは若いほうの相方で決まるため */
+    { id:'RX3', tid:'TX1', ev:'ダブルス', cat:'ミドル', sex:'男子', draw:32, place:'優勝', pid:'PX1', status:'承認済' });
   applyData(DATA);
-  const has = (cat, pid) => !!(BOARDS[`シングルス|男子|${cat}`]?.rows || []).find(r => r.pid === pid);
+  const has = (ev, cat, pid) => !!(BOARDS[`${ev}|男子|${cat}`]?.rows || []).find(r => r.pid === pid);
   return {
-    ミドルからシニアへ: has('シニア', 'PX1'),
-    フリーには入らない: !has('フリー', 'PX1'),
-    昇格しても引き継ぐ: has('シニア', 'PX2') && has('ミドル', 'PX2') && has('フリー', 'PX2')
+    ミドルからシニアへ: has('シングルス', 'シニア', 'PX1'),
+    フリーには入らない: !has('シングルス', 'フリー', 'PX1'),
+    昇格しても引き継ぐ: has('シングルス', 'シニア', 'PX2') && has('シングルス', 'ミドル', 'PX2')
+      && has('シングルス', 'フリー', 'PX2'),
+    ダブルスは出た区分だけ: has('ダブルス', 'ミドル', 'PX1') && !has('ダブルス', 'シニア', 'PX1')
   };
 });
 check('上位カテゴリへ算入される', cross.ミドルからシニアへ, 'ミドルの成績がシニアにも入る');
 check('下位カテゴリへは算入しない', cross.フリーには入らない, 'ミドルの成績はフリーに入らない');
 check('カテゴリが上がっても成績が残る', cross.昇格しても引き継ぐ, '年齢は集計基準日で判定');
+check('ダブルスはカテゴリを跨がない', cross.ダブルスは出た区分だけ,
+  '同じ選手・同じ大会でも、ダブルスは出場したカテゴリにだけ載る');
 
 /* 出場資格の検査。取り込みで別人に当ててしまった場合、たいていここに出る */
 const elig = await page.evaluate(() => {
