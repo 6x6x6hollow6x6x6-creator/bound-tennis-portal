@@ -226,7 +226,7 @@ tailwind.config = {
   <!-- 協会名義の著作権表記は出さない。非公式の試作サイトなので、
        協会が作ったものと受け取られないようにする -->
   <div class="bg-navy/60 text-center text-[11.5px] py-3 tracking-wide text-white/70 border-t border-white/10">
-    バウンドテニス 大会情報ポータル（検討用の試作）　※公式サイトではありません
+    バウンドテニス 大会情報ポータル（検討用の試作）　※公式サイトではありません<span id="appVer" class="ml-3 text-white/45"></span>
   </div>
 </footer>
 
@@ -293,6 +293,9 @@ tailwind.config = {
 /* =====================================================================
    設定 — ここだけ書き換えれば本番につながります
    ===================================================================== */
+
+/* サイトの版。改修して公開するたびに上げる（フッターに小さく出す） */
+const APP_VERSION = 'v1';
 
 /* Apps Script のウェブアプリURL。空のままだとサーバーには一切つなぎません（お試しモード） */
 const SHEETS_API_URL = 'https://script.google.com/macros/s/AKfycbwK1H8ipg08ThE2vah0QZwNZR2nY_MBeFIrqU2GBF5UTxwr4l1Vh-cv2B0C6c4NmuhU/exec';
@@ -2250,6 +2253,7 @@ function admSite(){
    起動
    ===================================================================== */
 async function boot(){
+  document.getElementById('appVer').textContent = APP_VERSION;
   buildNav();
   const d = await loadData();
   applyData(d);
