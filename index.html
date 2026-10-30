@@ -49,6 +49,58 @@ tailwind.config = {
   @keyframes fi{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
   @media print{header,footer,#adminOverlay,.no-print{display:none!important}}
 </style>
+<!-- 全アプリ共通：退出確認（exit-guard v1）。ブラウザの戻るでサイトから出てしまう前に確かめる。
+     このサイトは history を使わないので置き場所の制約はないが、部品の注意どおりアプリの処理より前に置く -->
+<style>#exit-guard .eg-b [data-eg=stay]{background:#001F33;color:#fff}</style>
+<script>
+/* ---------- 退出確認（共通機能 exit-guard v1）----------
+   ブラウザの戻るでアプリから出てしまうときだけ「終了しますか？」を出す。
+   しくみ：利用者が最初に画面を触ったとき、履歴のいちばん下に「見張り」を1つ差し込む。戻るで見張りに来たら確認を出す。
+   置き場所：アプリが history.state を書き換える処理（初期化）より前、アプリの popstate 処理より前。
+   ・最初の操作（タップ・キー）より前に戻るを押した場合は確認を出せない（ブラウザの仕様で、操作前に足した履歴は戻るで飛ばされるため）
+   ・配色はアプリの --surface --ink --muted --line --livery --livery-fg があれば使い、なければ既定色 */
+(function(){
+  const KEY='exit-guard';
+  let armed=false;
+  try{const s=history.state;armed=s!=null&&!s.exitGuard&&sessionStorage.getItem(KEY)==='1'}catch(e){} /* 再読み込みなら見張りは差し込み済み */
+  const EVS=['click','keydown','touchend'];
+  function arm(){if(armed)return;armed=true;EVS.forEach(t=>removeEventListener(t,arm,true));
+    try{const st=history.state,url=location.href;
+      history.replaceState({exitGuard:1},'',url);history.pushState(st,'',url);sessionStorage.setItem(KEY,'1')}catch(e){}}
+  if(!armed)EVS.forEach(t=>addEventListener(t,arm,true));
+
+  const css=document.createElement('style');
+  css.textContent=`#exit-guard{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(0,0,0,.45)}
+#exit-guard .eg-box{width:100%;max-width:320px;background:var(--surface,#fff);color:var(--ink,#222);border-radius:16px;padding:20px 18px 16px;box-shadow:0 10px 40px rgba(0,0,0,.3);font-family:var(--body,system-ui,sans-serif)}
+#exit-guard .eg-t{margin:0 0 6px;font-size:17px;font-weight:700}
+#exit-guard .eg-s{margin:0 0 16px;font-size:13px;line-height:1.6;color:var(--muted,#666)}
+#exit-guard .eg-b{display:flex;gap:8px}
+#exit-guard button{flex:1;padding:11px;border-radius:10px;font:inherit;font-weight:700;border:1px solid var(--line,#ccc);background:transparent;color:inherit;cursor:pointer}
+#exit-guard [data-eg=stay]{background:var(--livery,#333);color:var(--livery-fg,#fff);border-color:transparent}`;
+  document.head.appendChild(css);
+
+  const close=()=>{const d=document.getElementById('exit-guard');if(d)d.remove()};
+  function stay(){close();history.forward()} /* 見張りの1つ上（直前の画面）へ戻す */
+  function leave(){let gone=false;const mark=()=>{gone=true};addEventListener('pagehide',mark,{once:true});
+    history.back();
+    setTimeout(()=>{if(gone||document.hidden)return;removeEventListener('pagehide',mark); /* 前のページがない（新しいタブで開いた）とき */
+      const d=document.getElementById('exit-guard');if(!d)return;
+      d.querySelector('.eg-t').textContent='これより前のページがありません';
+      d.querySelector('.eg-s').textContent='終了するときは、ブラウザのタブを閉じてください。';
+      d.querySelector('.eg-b').innerHTML='<button type="button" data-eg="stay">閉じる</button>';d.querySelector('button').focus()},500)}
+  function show(){if(document.getElementById('exit-guard'))return;
+    const d=document.createElement('div');d.id='exit-guard';d.setAttribute('role','dialog');d.setAttribute('aria-modal','true');
+    d.innerHTML='<div class="eg-box"><p class="eg-t">アプリを終了しますか？</p><p class="eg-s">前のページに戻ります。</p><div class="eg-b"><button type="button" data-eg="stay">とどまる</button><button type="button" data-eg="leave">終了する</button></div></div>';
+    d.addEventListener('click',ev=>{ev.stopPropagation();const b=ev.target.closest('[data-eg]');
+      if(b&&b.dataset.eg==='leave')leave();else if(b||ev.target===d)stay()});
+    d.addEventListener('keydown',ev=>{if(ev.key==='Escape')stay()});
+    document.body.appendChild(d);d.querySelector('[data-eg=stay]').focus()}
+  /* 見張りに来たら確認を出す。アプリ側の popstate には渡さない（画面はそのまま） */
+  addEventListener('popstate',e=>{if(e.state&&e.state.exitGuard){e.stopImmediatePropagation();show()}else close()},true);
+  /* 外へ出たあと「進む」で戻ってきたとき（ページが保存されていた場合） */
+  addEventListener('pageshow',e=>{if(!e.persisted)return;close();if(history.state&&history.state.exitGuard)history.forward()});
+})();
+</script>
 </head>
 
 <body class="bg-paper text-ink">
