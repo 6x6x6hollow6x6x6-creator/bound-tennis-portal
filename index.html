@@ -53,7 +53,7 @@ tailwind.config = {
      このサイトは history を使わないので置き場所の制約はないが、部品の注意どおりアプリの処理より前に置く -->
 <style>#exit-guard .eg-b [data-eg=stay]{background:#001F33;color:#fff}</style>
 <script>
-/* ---------- 退出確認（共通機能 exit-guard v1）----------
+/* ---------- 退出確認（共通機能 exit-guard v2）----------
    ブラウザの戻るでアプリから出てしまうときだけ「終了しますか？」を出す。
    しくみ：利用者が最初に画面を触ったとき、履歴のいちばん下に「見張り」を1つ差し込む。戻るで見張りに来たら確認を出す。
    置き場所：アプリが history.state を書き換える処理（初期化）より前、アプリの popstate 処理より前。
@@ -76,18 +76,20 @@ tailwind.config = {
 #exit-guard .eg-s{margin:0 0 16px;font-size:13px;line-height:1.6;color:var(--muted,#666)}
 #exit-guard .eg-b{display:flex;gap:8px}
 #exit-guard button{flex:1;padding:11px;border-radius:10px;font:inherit;font-weight:700;border:1px solid var(--line,#ccc);background:transparent;color:inherit;cursor:pointer}
-#exit-guard [data-eg=stay]{background:var(--livery,#333);color:var(--livery-fg,#fff);border-color:transparent}`;
+#exit-guard [data-eg=stay]{background:var(--livery,#333);color:var(--livery-fg,#fff);border-color:transparent}
+#exit-guard-note{position:fixed;left:50%;bottom:calc(96px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:9999;max-width:calc(100% - 32px);padding:10px 16px;border-radius:999px;background:rgba(20,20,20,.88);color:#fff;font:600 13px/1.5 var(--body,system-ui,sans-serif);text-align:center;pointer-events:none}`;
   document.head.appendChild(css);
 
   const close=()=>{const d=document.getElementById('exit-guard');if(d)d.remove()};
   function stay(){close();history.forward()} /* 見張りの1つ上（直前の画面）へ戻す */
   function leave(){let gone=false;const mark=()=>{gone=true};addEventListener('pagehide',mark,{once:true});
+    try{window.close()}catch(e){} /* 閉じられる場面（ホーム画面から開いたアプリなど）はここで閉じる */
     history.back();
-    setTimeout(()=>{if(gone||document.hidden)return;removeEventListener('pagehide',mark); /* 前のページがない（新しいタブで開いた）とき */
-      const d=document.getElementById('exit-guard');if(!d)return;
-      d.querySelector('.eg-t').textContent='これより前のページがありません';
-      d.querySelector('.eg-s').textContent='終了するときは、ブラウザのタブを閉じてください。';
-      d.querySelector('.eg-b').innerHTML='<button type="button" data-eg="stay">閉じる</button>';d.querySelector('button').focus()},500)}
+    setTimeout(()=>{if(gone||document.hidden)return;removeEventListener('pagehide',mark);
+      /* 前のページがない（ホーム画面や新しいタブから開いた）：確認を消して見張りの位置に留まる。次の「戻る」でそのまま出られる */
+      close();note('もう一度「戻る」で終了します（パソコンではタブを閉じてください）')},500)}
+  function note(t){const old=document.getElementById('exit-guard-note');if(old)old.remove();
+    const n=document.createElement('div');n.id='exit-guard-note';n.setAttribute('role','status');n.textContent=t;document.body.appendChild(n);setTimeout(()=>n.remove(),3500)}
   function show(){if(document.getElementById('exit-guard'))return;
     const d=document.createElement('div');d.id='exit-guard';d.setAttribute('role','dialog');d.setAttribute('aria-modal','true');
     d.innerHTML='<div class="eg-box"><p class="eg-t">アプリを終了しますか？</p><p class="eg-s">前のページに戻ります。</p><div class="eg-b"><button type="button" data-eg="stay">とどまる</button><button type="button" data-eg="leave">終了する</button></div></div>';
@@ -347,7 +349,7 @@ tailwind.config = {
    ===================================================================== */
 
 /* サイトの版。改修して公開するたびに上げる（フッターに小さく出す） */
-const APP_VERSION = 'v1';
+const APP_VERSION = 'v2';
 
 /* Apps Script のウェブアプリURL。空のままだとサーバーには一切つなぎません（お試しモード） */
 const SHEETS_API_URL = 'https://script.google.com/macros/s/AKfycbwK1H8ipg08ThE2vah0QZwNZR2nY_MBeFIrqU2GBF5UTxwr4l1Vh-cv2B0C6c4NmuhU/exec';
