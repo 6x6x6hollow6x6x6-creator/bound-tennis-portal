@@ -27,6 +27,7 @@
   - `https://accounts.google.com/gsi/client`
 - **データは3段フォールバック。** ① Apps Script API → ② `localStorage` → ③ コード内 `DEFAULT_DATA`
   API未設定でもオフラインでも画面が壊れないこと。この性質を壊す変更をしない
+  - その前に ⓪「送れていない変更」`LS` の `pending` を見る（2026-11-13〜）。`saveAll` は送る前に `setPending` で取っておき、全部送れたら `clearPending`。これがあると API より優先して出す（次に開いたときにシートで上書きされて入力が消えないように）。管理画面の右上に「● 送れていない変更あり」と「捨ててシートに戻す」が出る
 - **POSTは必ず `Content-Type: text/plain;charset=utf-8`。** Apps Scriptはプリフライトに応答できないためCORS回避。受け側で `JSON.parse`
 - **書き込み権限の判定はサーバー側（`Code.gs` の `verifyIdToken_()`）が本体。** フロントの制御は目隠しにすぎない
 - サーバー代・ドメイン代ゼロを維持する。有料サービスに依存する提案をしない

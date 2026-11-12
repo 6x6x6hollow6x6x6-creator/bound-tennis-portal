@@ -309,6 +309,7 @@ tailwind.config = {
       <span id="admUser" class="text-[11.5px] text-white/70"></span>
       <div class="ml-auto flex gap-2 items-center flex-wrap">
         <span id="admDirty" class="text-[11.5px] text-red-200 font-bold" hidden>● 未保存の変更あり</span>
+        <span id="admPending" class="text-[11.5px] text-amber-200 font-bold" hidden>● 送れていない変更あり（<span id="admPendingAt"></span>）　<button id="admPendingDrop" type="button" class="underline font-normal">捨ててシートに戻す</button></span>
         <button id="admSave" class="rounded-full bg-white text-navy text-[12.5px] font-bold px-5 py-2">保存する</button>
         <button id="admExport" class="rounded-full border border-white/40 text-[12.5px] font-bold px-4 py-2">JSON書き出し</button>
         <button id="admImport" class="rounded-full border border-white/40 text-[12.5px] font-bold px-4 py-2">JSON読み込み</button>
@@ -349,7 +350,7 @@ tailwind.config = {
    ===================================================================== */
 
 /* サイトの版。改修して公開するたびに上げる（フッターに小さく出す） */
-const APP_VERSION = 'v2';
+const APP_VERSION = 'v3';
 
 /* Apps Script のウェブアプリURL。空のままだとサーバーには一切つなぎません（お試しモード） */
 const SHEETS_API_URL = 'https://script.google.com/macros/s/AKfycbwK1H8ipg08ThE2vah0QZwNZR2nY_MBeFIrqU2GBF5UTxwr4l1Vh-cv2B0C6c4NmuhU/exec';
@@ -684,7 +685,7 @@ function tournamentStatus(t, as){
    ===================================================================== */
 let DATA = null, S = null, AS = '', BOARDS = {}, HISTORY = {}, GL = {};
 let T_BY_ID = {}, P_BY_ID = {}, P_MIN_AGE = {};
-let DATA_SOURCE = 'default';   /* 'api' | 'cache' | 'default' */
+let DATA_SOURCE = 'default';   /* 'api' | 'cache' | 'default' | 'pending'（送れていない変更） */
 
 function normalise(raw){
   const d = {
@@ -738,6 +739,15 @@ async function apiGet(){
 }
 
 async function loadData(){
+  /* ⓪ 送れていない変更（保存の通信に失敗した分）があれば、それを出す。
+     ないと、次に開いたときにシートの内容で上書きされて、入力が消えてしまうため。送れたら消す（saveAll） */
+  const pending = LS.get('pending');
+  if (pending && pending.data){
+    DATA_SOURCE = 'pending';
+    PENDING_AT = pending.at || '';
+    return normalise(pending.data);
+  }
+  PENDING_AT = '';
   /* ① API */
   if (SHEETS_API_URL){
     try {
@@ -1491,6 +1501,7 @@ let ADMIN_USER = null;    /* {email, name} */
 let LOCAL_MODE = false;   /* サーバー未設定のお試しモード */
 let ADM_TAB = 'tournaments';
 let ADM_DIRTY = false;
+let PENDING_AT = '';      /* 送れていない変更を取っておいた日時（無ければ空） */
 
 const CONFIGURED = () => Boolean(SHEETS_API_URL && GOOGLE_CLIENT_ID);
 
@@ -1565,10 +1576,12 @@ async function saveAll(){
           localOk ? 'warn' : 'error');
     return;
   }
-  if (!ID_TOKEN){ toast('サインインの有効期限が切れました。もう一度サインインしてください。', 'error'); return; }
+  /* 送り終えるまでは「送れていない変更」として取っておく。途中で失敗したり、サインインが切れていたりしても、
+     次に開いたときにシートの内容で上書きされて消えないように */
+  setPending(snapshot); syncDirty();
+  if (!ID_TOKEN){ toast('サインインの有効期限が切れました。入力はこの端末に取ってあります。もう一度サインインして「保存する」を押してください。', 'error'); return; }
 
   $('#admSave').disabled = true;
-  const failed = [];
   try {
     for (const type of TYPES){
       await apiPost({ idToken: ID_TOKEN, type, items: DATA[type] });
@@ -1576,13 +1589,13 @@ async function saveAll(){
     for (const key of Object.keys(DATA.content)){
       await apiPost({ idToken: ID_TOKEN, type:'content', key, content: DATA.content[key] });
     }
-    ADM_DIRTY = false; syncDirty();
+    ADM_DIRTY = false; clearPending(); syncDirty();
     toast('スプレッドシートに保存しました。');
   } catch (err){
     if (err.kind === 'unauthorized'){
       toast('このGoogleアカウントには編集権限がありません。事務局に連絡してください。', 'error');
     } else if (err.kind === 'network' || err instanceof TypeError){
-      toast('通信に失敗しました。この端末には保存済みなので、電波のよい場所でもう一度「保存する」を押してください。', 'error');
+      toast('通信に失敗しました。入力はこの端末に取ってあります（次に開いても消えません）。電波のよい場所でもう一度「保存する」を押してください。', 'error');
     } else {
       toast('保存に失敗しました：' + err.message, 'error');
     }
@@ -1599,6 +1612,7 @@ function openAdmin(){
   $('#admMode').className = 'text-[11px] px-2 py-0.5 ' + (CONFIGURED() && !LOCAL_MODE ? 'bg-white/15' : 'bg-brand-red');
   $('#admUser').textContent = ADMIN_USER ? ADMIN_USER.email : '';
   buildAdminTabs();
+  syncDirty();
   renderAdmin();
 }
 function closeAdmin(){
@@ -1652,7 +1666,22 @@ $('#admReload').addEventListener('click', async () => {
   toast('読み込み直しました。');
 });
 function markDirty(){ ADM_DIRTY = true; syncDirty(); }
-function syncDirty(){ $('#admDirty').hidden = !ADM_DIRTY; }
+function syncDirty(){
+  $('#admDirty').hidden = !ADM_DIRTY;
+  $('#admPending').hidden = !PENDING_AT;
+  if (PENDING_AT) $('#admPendingAt').textContent = PENDING_AT;
+}
+/* 送れていない変更（保存の通信に失敗した分）。シートに送れるまで、この端末に取っておく */
+function nowLabel(){ const d = new Date(); return `${d.getMonth()+1}/${d.getDate()} ${d.getHours()}:${String(d.getMinutes()).padStart(2,'0')}`; }
+function setPending(snapshot){ PENDING_AT = nowLabel(); LS.set('pending', { at: PENDING_AT, data: snapshot }); }
+function clearPending(){ PENDING_AT = ''; LS.del('pending'); }
+$('#admPendingDrop').addEventListener('click', async () => {
+  if (!confirm('送れていない変更を捨てて、スプレッドシートの内容に戻します。この端末での入力は消えます。よろしいですか？')) return;
+  clearPending();
+  const d = await loadData(); applyData(d);
+  ADM_DIRTY = false; syncDirty(); renderAdmin();
+  toast('スプレッドシートの内容に戻しました。');
+});
 addEventListener('beforeunload', e => { if (ADM_DIRTY){ e.preventDefault(); e.returnValue = ''; } });
 
 const ADM_TABS = [
@@ -2318,6 +2347,7 @@ async function boot(){
   initAuth();
   if (window.lucide) try { lucide.createIcons(); } catch(e){}
   if (DATA_SOURCE === 'cache') toast('サーバーにつながらないため、前回読み込んだ内容を表示しています。', 'warn');
+  if (DATA_SOURCE === 'pending') toast(`スプレッドシートに送れていない変更（${PENDING_AT}）があります。管理画面で「保存する」を押すと送ります。`, 'warn');
 }
 boot();
 </script>
