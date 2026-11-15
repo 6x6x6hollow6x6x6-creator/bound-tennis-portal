@@ -350,7 +350,7 @@ tailwind.config = {
    ===================================================================== */
 
 /* サイトの版。改修して公開するたびに上げる（フッターに小さく出す） */
-const APP_VERSION = 'v3';
+const APP_VERSION = 'v4';
 
 /* Apps Script のウェブアプリURL。空のままだとサーバーには一切つなぎません（お試しモード） */
 const SHEETS_API_URL = 'https://script.google.com/macros/s/AKfycbwK1H8ipg08ThE2vah0QZwNZR2nY_MBeFIrqU2GBF5UTxwr4l1Vh-cv2B0C6c4NmuhU/exec';
@@ -792,7 +792,10 @@ const NAV = [
   ['home','トップ'], ['events','大会情報'], ['ranking','日本ランキング'],
   ['results','大会結果'], ['news','お知らせ'], ['about','ランキング制度']
 ];
-function go(v){
+let CUR_VIEW = 'home';
+function go(v, fromHash){
+  CUR_VIEW = v;
+  if (!fromHash) syncHash(true);
   $$('.view').forEach(s => s.hidden = s.dataset.view !== v);
   $$('#mainNav .nav-a').forEach(b => b.setAttribute('aria-current', b.dataset.nav === v ? 'page' : 'false'));
   $('#drawer').hidden = true;
@@ -809,6 +812,50 @@ function buildNav(){
   $('#footNav').innerHTML = NAV.slice(1).map(([v,l]) =>
     `<button class="text-white/85 hover:text-white" data-nav="${v}">${esc(l)}</button>`).join('<span class="text-white/30">／</span>');
 }
+/* 開いているページと絞り込みをアドレスの # に入れる。
+   「シニア男子シングルスの順位」をLINEで送れる・読み込み直しても同じページ・戻るで前のページへ戻れるように。
+   ページを移るときは履歴を積み、絞り込みを変えたときは積まずに書き換える（戻るが絞り込みの数だけ増えないように） */
+function viewHash(v){
+  const p = new URLSearchParams();
+  if (v === 'ranking'){
+    const [ev, sex, cat] = rkey().split('|');
+    p.set('ev', ev);
+    if (ev !== 'ミックスダブルス') p.set('sex', sex);
+    p.set('cat', cat);
+    if ($('#rPref').value) p.set('pref', $('#rPref').value);
+    if ($('#rQ').value.trim()) p.set('q', $('#rQ').value.trim());
+  }
+  if (v === 'results'){
+    if ($('#sPref').value) p.set('pref', $('#sPref').value);
+    if ($('#sGrade').value) p.set('grade', $('#sGrade').value);
+    if ($('#sQ').value.trim()) p.set('q', $('#sQ').value.trim());
+  }
+  const q = p.toString();
+  return v === 'home' ? '' : '#' + v + (q ? '?' + q : '');
+}
+function syncHash(push){
+  const h = viewHash(CUR_VIEW);
+  if (location.hash === h || (!h && !location.hash)) return;
+  const url = h || location.pathname + location.search;
+  try { push ? history.pushState({ btp:1 }, '', url) : history.replaceState(history.state, '', url); } catch(e){}
+}
+/* アドレスの # からページと絞り込みを戻す（開いたとき・戻る／進むのとき） */
+function applyHash(){
+  const m = /^#(\w+)(?:\?(.*))?$/.exec(location.hash);
+  const v = m && NAV.some(n => n[0] === m[1]) ? m[1] : 'home';
+  const p = new URLSearchParams((m && m[2]) || '');
+  const setSel = (sel, val) => { const el = $(sel); el.value = [...el.options].some(o => o.value === val) ? val : ''; };
+  if (v === 'ranking'){
+    pickChip('rEvent', p.get('ev')); pickChip('rSex', p.get('sex')); pickChip('rCat', p.get('cat'));
+    setSel('#rPref', p.get('pref') || ''); $('#rQ').value = p.get('q') || '';
+  }
+  if (v === 'results'){
+    setSel('#sPref', p.get('pref') || ''); setSel('#sGrade', p.get('grade') || ''); $('#sQ').value = p.get('q') || '';
+  }
+  go(v, true);
+  syncHash(false); /* 知らない # なら消しておく */
+}
+addEventListener('popstate', e => { if (e.state && e.state.exitGuard) return; applyHash(); });
 document.addEventListener('click', e => {
   const b = e.target.closest('[data-nav]');
   if (b){ e.preventDefault(); go(b.dataset.nav); }
@@ -1013,22 +1060,31 @@ function buildRankFilters(){
   PREFS.forEach(p => $('#rPref').add(new Option(p, p)));
   ['rEvent','rSex','rCat'].forEach(id => $('#'+id).addEventListener('click', e => {
     const b = e.target.closest('.chip'); if (!b || b.disabled) return;
-    $$('#'+id+' .chip').forEach(x => {
-      const on = x === b;
-      x.setAttribute('aria-pressed', on);
-      x.classList.toggle('bg-navy', on); x.classList.toggle('text-white', on);
-      x.classList.toggle('border-navy', on); x.classList.toggle('border-rule', !on);
-      x.classList.toggle('text-ink-soft', !on);
-    });
-    if (id === 'rEvent'){
-      const mixed = b.dataset.v === 'ミックスダブルス';
-      $$('#rSex .chip').forEach(x => { x.disabled = mixed; x.classList.toggle('opacity-40', mixed); });
-    }
+    pressChip(id, b);
     renderRanking(true);
   }));
   $('#rPref').addEventListener('change', () => renderRanking(true));
   $('#rQ').addEventListener('input', () => renderRanking(true));
   $('#rankMore').addEventListener('click', () => { rkShown += 50; renderRanking(); });
+}
+function pressChip(id, b){
+  $$('#'+id+' .chip').forEach(x => {
+    const on = x === b;
+    x.setAttribute('aria-pressed', on);
+    x.classList.toggle('bg-navy', on); x.classList.toggle('text-white', on);
+    x.classList.toggle('border-navy', on); x.classList.toggle('border-rule', !on);
+    x.classList.toggle('text-ink-soft', !on);
+  });
+  if (id === 'rEvent'){
+    const mixed = b.dataset.v === 'ミックスダブルス';
+    $$('#rSex .chip').forEach(x => { x.disabled = mixed; x.classList.toggle('opacity-40', mixed); });
+  }
+}
+/* アドレスから選ぶとき。無い値なら先頭（既定）にする */
+function pickChip(id, val){
+  const all = $$('#'+id+' .chip');
+  const b = all.find(x => x.dataset.v === val) || all[0];
+  if (b) pressChip(id, b);
 }
 function deltaCell(rank, prev){
   if (prev == null) return `<span class="text-[11.5px] text-ink-mute">—</span>`;
@@ -1054,6 +1110,7 @@ function renderRanking(reset){
   const key = rkey(), board = BOARDS[key] || { rows:[], holders:0 };
   const pf = $('#rPref').value, q = $('#rQ').value.trim();
   let rows = board.rows;
+  if (CUR_VIEW === 'ranking') syncHash(false);
   if (pf) rows = rows.filter(r => r.pref === pf);
   if (q)  rows = rows.filter(r => r.name.includes(q));
   $('#rankSummary').innerHTML = `<b>${esc(key.replace(/\|/g, ' ／ '))}</b>　掲載 ${fmtN(rows.length)} 名`
@@ -1187,6 +1244,7 @@ function renderResults(reset){
     $('#sMore').addEventListener('click', () => { sShown += 20; renderResults(); });
   }
   const pf = $('#sPref').value, gd = $('#sGrade').value, q = $('#sQ').value.trim();
+  if (CUR_VIEW === 'results') syncHash(false);
   const list = DATA.tournaments
     .filter(t => DATA.results.some(r => r.tid === t.id && r.status === '承認済'))
     .filter(t => (!pf || t.pref === pf) && (!gd || t.grade === gd) && (!q || t.name.includes(q)))
@@ -2344,6 +2402,7 @@ async function boot(){
   buildRankFilters();
   renderHome(); renderMonthChart(); renderNews(); renderAbout();
   renderEvents(true); renderRanking(true); renderResults(true);
+  if (location.hash) applyHash();
   initAuth();
   if (window.lucide) try { lucide.createIcons(); } catch(e){}
   if (DATA_SOURCE === 'cache') toast('サーバーにつながらないため、前回読み込んだ内容を表示しています。', 'warn');

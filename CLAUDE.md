@@ -17,6 +17,7 @@
 - 注記（チェックリスト v3 の10）：見送り（2026-11-13 利用者が決定）
 
 - 版：`APP_VERSION`（index.html:350、設定定数のすぐ上）。改修して公開するたびに上げる
+- ページと絞り込みはアドレスの # に入れる（2026-11-16、v4）：`#ranking?ev=…&sex=…&cat=…&pref=…&q=…`・`#results?pref=…&grade=…&q=…`・`#events` など（トップは # なし）。`go(v)` でページを移ると履歴を積み（`syncHash(true)`）、絞り込みを変えたときは `renderRanking`/`renderResults` の中で書き換えるだけ（`syncHash(false)`）。開いたとき・戻る／進むで `applyHash` が # から戻す（知らない # はトップにして消す）。退出確認の見張り（`exitGuard` の state）の popstate には反応しない。チップの見た目は `pressChip`、# から選ぶのは `pickChip`
 
 ## 絶対に崩してはいけない設計
 
