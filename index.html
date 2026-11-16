@@ -223,7 +223,7 @@ tailwind.config = {
         <div class="flex items-center gap-2"><span class="text-[11.5px] font-bold text-ink-soft tracking-wider whitespace-nowrap">カテゴリ</span><div class="flex gap-1.5 flex-wrap" id="rCat"></div></div>
         <div class="flex items-center gap-2"><span class="text-[11.5px] font-bold text-ink-soft tracking-wider whitespace-nowrap">所属</span>
           <select id="rPref" class="border border-rule px-2 py-1.5 text-[13px] bg-white"><option value="">全国</option></select></div>
-        <input id="rQ" type="text" placeholder="選手名で探す" class="ml-auto border border-rule px-3 py-1.5 text-[13px] w-48">
+        <input id="rQ" type="text" placeholder="選手名・ふりがなで探す" class="ml-auto border border-rule px-3 py-1.5 text-[13px] w-48">
       </div>
       <p id="rankSummary" class="text-xs text-ink-mute mt-4"></p>
       <div class="mt-3 overflow-x-auto"><table class="w-full text-sm" id="rankTable"></table></div>
@@ -350,7 +350,7 @@ tailwind.config = {
    ===================================================================== */
 
 /* サイトの版。改修して公開するたびに上げる（フッターに小さく出す） */
-const APP_VERSION = 'v4';
+const APP_VERSION = 'v5';
 
 /* Apps Script のウェブアプリURL。空のままだとサーバーには一切つなぎません（お試しモード） */
 const SHEETS_API_URL = 'https://script.google.com/macros/s/AKfycbwK1H8ipg08ThE2vah0QZwNZR2nY_MBeFIrqU2GBF5UTxwr4l1Vh-cv2B0C6c4NmuhU/exec';
@@ -381,6 +381,22 @@ function esc(s){
   return String(s == null ? '' : s)
     .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
     .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+/* 検索のための文字そろえ：全角・半角（NFKC）、空白、カタカナ→ひらがな、大文字小文字、旧字体の「髙・﨑・邊・邉」の違いを無くす。
+   「山田 太郎」「山田太郎」「やまだ」「ヤマダ」のどれでも見つかるように */
+function fold(s){
+  return String(s == null ? '' : s).normalize('NFKC').toLowerCase()
+    .replace(/[\s\u3000・･.]/g, '')
+    .replace(/[\u30a1-\u30f6]/g, c => String.fromCharCode(c.charCodeAt(0) - 0x60))
+    .replace(/[髙]/g, '高').replace(/[﨑]/g, '崎').replace(/[邊邉]/g, '辺');
+}
+/* 空白で区切った言葉が全部入っていれば当たり（「太郎 山田」の順でも見つかる）。区切らずに打った「山田太郎」も、空白を除いた名前と比べるので当たる */
+function matchQ(text, q){
+  const t = fold(text), whole = fold(q);
+  if (!whole) return true;
+  if (t.includes(whole)) return true;
+  const words = String(q).normalize('NFKC').split(/\s+/).map(fold).filter(Boolean);
+  return words.length > 1 && words.every(w => t.includes(w));
 }
 /* href に入れてよいURLだけ通す（javascript: 等を弾く） */
 function safeUrl(u){
@@ -1112,7 +1128,7 @@ function renderRanking(reset){
   let rows = board.rows;
   if (CUR_VIEW === 'ranking') syncHash(false);
   if (pf) rows = rows.filter(r => r.pref === pf);
-  if (q)  rows = rows.filter(r => r.name.includes(q));
+  if (q)  rows = rows.filter(r => matchQ(r.name + ' ' + (r.kana || ''), q));
   $('#rankSummary').innerHTML = `<b>${esc(key.replace(/\|/g, ' ／ '))}</b>　掲載 ${fmtN(rows.length)} 名`
     + (board.holders ? `　（ほかに出場が少なくランキング対象外のポイント保有者 ${board.holders} 名）` : '');
   const t = $('#rankTable');
@@ -1247,7 +1263,7 @@ function renderResults(reset){
   if (CUR_VIEW === 'results') syncHash(false);
   const list = DATA.tournaments
     .filter(t => DATA.results.some(r => r.tid === t.id && r.status === '承認済'))
-    .filter(t => (!pf || t.pref === pf) && (!gd || t.grade === gd) && (!q || t.name.includes(q)))
+    .filter(t => (!pf || t.pref === pf) && (!gd || t.grade === gd) && (!q || matchQ(t.name + ' ' + (t.venue || ''), q)))
     .sort((a,b) => b.date.localeCompare(a.date));
   $('#sCount').textContent = `${list.length} 大会`;
   const page = list.slice(0, sShown);
@@ -1818,7 +1834,7 @@ function admTournaments(){
 function drawTList(){
   const q = ($('#tq') && $('#tq').value.trim()) || '';
   const list = [...DATA.tournaments]
-    .filter(t => !q || (t.name + t.pref + t.host + t.venue).includes(q))
+    .filter(t => !q || matchQ([t.name, t.pref, t.host, t.venue].join(' '), q))
     .sort((a,b) => String(b.date).localeCompare(String(a.date)));
   $('#tTable').innerHTML = `<thead><tr class="bg-navy text-white text-[11px] sticky top-0">
       <th class="text-left px-3 py-2 w-24">開催日</th><th class="text-left px-3 py-2">大会名</th>
@@ -2186,7 +2202,7 @@ function admPlayers(){
 }
 function drawPList(){
   const q = ($('#pq') && $('#pq').value.trim()) || '';
-  const list = DATA.players.filter(p => !q || (p.name + (p.kana||'') + p.id + (p.regno||'')).includes(q)).slice(0, 500);
+  const list = DATA.players.filter(p => !q || matchQ([p.name, p.kana, p.id, p.regno].join(' '), q)).slice(0, 500);
   $('#pTable').innerHTML = `<thead><tr class="bg-navy text-white text-[11px] sticky top-0">
       <th class="text-left px-3 py-2">選手</th><th class="text-left px-3 py-2 w-20">所属</th>
       <th class="text-right px-3 py-2 w-14">年齢</th><th class="text-right px-3 py-2 w-14">出場</th></tr></thead>
