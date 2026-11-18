@@ -2,6 +2,11 @@ node_modules/
 package-lock.json
 package.json
 *.png
+# ホーム画面のアイコンだけは公開するので残す（ほかの png は試験の画面写しなど）
+!/apple-touch-icon.png
+!/icon-192.png
+!/icon-512.png
+!/icon-maskable-512.png
 .test-tw.css
 tw.config.js
 tw.css
