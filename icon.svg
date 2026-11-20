@@ -1,9 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <!-- ホーム画面のアイコンの元絵（2026-11-19 利用者が20案から「BTP の文字」を選んだ）。
-       文字なので端末によって字形が変わる。manifest にはこれを載せず、書き出した PNG だけを使う -->
-  <rect width="512" height="512" fill="#001F33"/>
-  <g id="art">
-    <text x="256" y="300" font-size="170" font-weight="900" fill="#F1F1F1" text-anchor="middle" letter-spacing="-6" font-family="Arial Black, sans-serif">BTP</text>
-    <rect x="110" y="340" width="292" height="18" rx="9" fill="#B50000"/>
-  </g>
-</svg>
